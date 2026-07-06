@@ -395,7 +395,7 @@ Responsibilities
 
 ## Interns
 
-### Intern A
+### KALYANI FULPAGARE
 
 Engineering Data & Validation Track
 
@@ -408,7 +408,7 @@ Responsibilities
 
 ---
 
-### Intern B
+### JANHAVI BACHHAV
 
 Fleet Reliability, Platform Security & Infrastructure Track
 
