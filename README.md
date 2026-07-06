@@ -1,96 +1,295 @@
 # IATERAP
 
-## Project Overview
-
-IATERAP is an AI-powered therapy and mental wellness platform being developed as part of the Software Development Internship.
-
-The project follows Agile methodology with Jira for project management, GitHub for version control, and Spring Boot + React as the technology stack.
+> Aircraft Test Procedure Engineering & Fleet Reliability Analytics Platform  
+> ADTECH Software Development Internship Project
 
 ---
 
-## Technology Stack
+# Overview
 
-### Backend
+IATERAP is an enterprise-grade engineering platform being developed during the ADTECH Software Development Internship.
+
+The platform is designed to assist aerospace engineering teams in creating, validating, approving and maintaining aircraft test procedures while providing fleet reliability analytics and AI-assisted engineering recommendations.
+
+The system follows a modular full-stack architecture consisting of:
+
+- Spring Boot Backend
+- React Frontend
+- PostgreSQL Database
+- FastAPI AI Service
+- Docker Deployment
+- GitHub Version Control
+- Jira Agile Project Management
+
+Development follows Agile methodology with weekly sprint deliverables and industry-standard software engineering practices.
+
+---
+
+# Project Objectives
+
+The project aims to:
+
+- Build a scalable engineering management platform
+- Standardize aircraft test procedure authoring
+- Support engineering validation workflows
+- Implement version-controlled approval pipelines
+- Compute engineering coverage using deterministic rules
+- Provide fleet reliability analytics
+- Integrate AI-assisted engineering recommendations
+- Deliver a production-ready containerized application
+
+---
+
+# Technology Stack
+
+## Backend
+
 - Java 21
 - Spring Boot
+- Spring MVC
 - Spring Data JPA
-- PostgreSQL
+- Spring Security
+- JWT Authentication
 - Maven
 
-### Frontend
-- React
-- Node.js 22 LTS
-- npm
+---
 
-### DevOps
+## Frontend
+
+- React
+- Vite
+- React Router
+- Axios
+- Recharts
+
+---
+
+## Database
+
+- PostgreSQL
+- Flyway
+
+---
+
+## AI Service
+
+- Python
+- FastAPI
+- Pandas
+- Scikit-learn
+
+---
+
+## DevOps
+
 - Docker
 - Docker Compose
 
-### Project Management
-- Jira
+---
+
+## Tools
+
+- Git
 - GitHub
+- Jira
+- Postman
+- VS Code
+- IntelliJ IDEA
 
 ---
 
-## Repository Structure
+# Repository Structure
 
 ```
-IATERAP/
+IATERAP
 │
 ├── backend/
+│
 ├── frontend/
+│
 ├── database/
+│
 ├── docker/
+│
 ├── docs/
+│
 ├── scripts/
+│
 ├── .github/
+│
 └── README.md
 ```
 
 ---
 
-## Git Workflow
+# System Architecture
+
+```
+                React Frontend
+                       │
+                       │ REST API
+                       ▼
+             Spring Boot Backend
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+        ▼              ▼              ▼
+ PostgreSQL      FastAPI AI      Authentication
+   Database        Service         (JWT/RBAC)
+```
+
+---
+
+# Development Phases
+
+## Phase 1
+
+Foundation & Domain Model
+
+- Environment setup
+- Spring Boot project
+- React project
+- PostgreSQL
+- Docker
+- Domain schema
+
+---
+
+## Phase 2
+
+Test Procedure Engineering
+
+- Procedure Builder
+- Test Step Engine
+- Approval Workflow
+- Version Management
+
+---
+
+## Phase 3
+
+Rule Engine & Coverage Engine
+
+- Engineering Rule Engine
+- Coverage Scoring
+- Heatmaps
+- Gap Detection
+
+---
+
+## Phase 4
+
+Fleet Reliability Analytics
+
+- Fault Injection
+- MTBF
+- MTTR
+- HFRA
+- Pareto Analysis
+- Trend Analysis
+- AI Advisory
+
+---
+
+## Phase 5
+
+Deployment & Finalization
+
+- Docker
+- CI/CD
+- Security Hardening
+- Documentation
+- Testing
+- Final Deployment
+
+---
+
+# Project Modules
+
+## Engineering Domain
+
+- Project
+- Aircraft
+- Subsystem
+- LRU
+- Interface
+- Connector
+- Signal
+- Protocol Tag
+- Fault Template
+- FMEA
+
+---
+
+## Test Procedure Module
+
+- Procedure Builder
+- Test Steps
+- Test Blocks
+- Approval Workflow
+- Version History
+
+---
+
+## Coverage Engine
+
+- Rule Evaluation
+- Coverage Score
+- Heatmaps
+- Gap Detection
+
+---
+
+## Reliability Analytics
+
+- Fault Injection
+- Event Processing
+- MTBF
+- MTTR
+- HFRA
+- Pareto Analysis
+- Trend Analysis
+
+---
+
+## AI Advisory
+
+- Engineering Suggestions
+- Recommendation Engine
+- Confidence Scoring
+
+---
+
+# Branch Strategy
 
 ```
 main
 │
 └── develop
       │
-      ├── feature/database-setup
-      ├── feature/frontend-init
-      ├── feature/docker-setup
-      └── ...
-```
-
-Development is performed on feature branches.
-
-No direct commits should be made to `main`.
-
----
-
-## Branch Naming Convention
-
-```
-feature/<feature-name>
-
-bugfix/<issue-name>
-
-hotfix/<issue-name>
-```
-
-Examples
-
-```
-feature/database-setup
-
-feature/frontend-project-init
-
-feature/docker-environment
+      ├── feature/*
+      ├── bugfix/*
+      └── hotfix/*
 ```
 
 ---
 
-## Commit Message Convention
+# Git Workflow
+
+1. Pull latest changes from `develop`
+2. Create a feature branch
+3. Implement the assigned Jira task
+4. Commit using the project convention
+5. Push the feature branch
+6. Raise a Pull Request
+7. Complete code review
+8. Merge into `develop`
+
+No direct commits are allowed to the `main` branch.
+
+---
+
+# Commit Message Convention
 
 Examples
 
@@ -103,22 +302,143 @@ AI-11: Initialize React frontend
 
 AI-12: Configure PostgreSQL
 
-AI-13: Add Docker environment
+AI-13: Configure Docker environment
 ```
 
 ---
 
-## Coding Standards
+# Coding Standards
 
+- Follow SOLID principles.
+- Follow package-by-feature architecture.
+- Keep controllers lightweight.
+- Business logic belongs in services.
+- Use constructor injection.
+- Use DTOs between layers.
+- Validate request objects.
 - Follow Java naming conventions.
-- Keep business logic inside services.
-- Controllers should remain thin.
-- Use meaningful commit messages.
-- One feature per branch.
-- Raise Pull Requests to merge into `develop`.
+- Write meaningful commit messages.
+- One Jira task per feature branch.
 
 ---
 
-## Current Sprint
+# Development Workflow
 
-Sprint 1 – Foundation & Domain Model
+```
+Requirement
+
+↓
+
+Jira Task
+
+↓
+
+Feature Branch
+
+↓
+
+Development
+
+↓
+
+Testing
+
+↓
+
+Pull Request
+
+↓
+
+Code Review
+
+↓
+
+Merge into develop
+
+↓
+
+Release
+```
+
+---
+
+# Current Sprint
+
+## Sprint 1 – Foundation & Domain Model
+
+Current objectives:
+
+- Backend Project Initialization
+- Frontend Project Initialization
+- Database Setup
+- Docker Environment
+- Initial Documentation
+
+---
+
+# Team
+
+## Mentor
+
+Atharva Pagar
+
+Responsibilities
+
+- Architecture
+- Project Setup
+- Git Workflow
+- Code Reviews
+- Sprint Planning
+- Documentation
+
+---
+
+## Interns
+
+### Intern A
+
+Engineering Data & Validation Track
+
+Responsibilities
+
+- Engineering Domain
+- Rule Engine
+- Coverage Engine
+- AI Advisory Logic
+
+---
+
+### Intern B
+
+Fleet Reliability, Platform Security & Infrastructure Track
+
+Responsibilities
+
+- Authentication
+- Security
+- Reliability Analytics
+- Deployment
+- Version Management
+
+---
+
+# Documentation
+
+Project documentation is available under the `docs/` directory.
+
+Future documentation includes:
+
+- Architecture Documentation
+- API Documentation
+- Database Design
+- Developer Guide
+- Deployment Guide
+- User Manual
+
+---
+
+# License
+
+This repository is developed as part of the ADTECH Software Development Internship.
+
+Distribution or commercial usage is subject to organizational guidelines.
