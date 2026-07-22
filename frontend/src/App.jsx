@@ -1,7 +1,7 @@
-import HealthCheckPage from "./pages/HealthCheckPage";
+import AppRoutes from "./routes/AppRoutes";
 
 function App() {
-  return <HealthCheckPage />;
+  return <AppRoutes />;
 }
 
 export default App;
