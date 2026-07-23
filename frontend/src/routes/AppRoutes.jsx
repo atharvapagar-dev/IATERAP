@@ -9,11 +9,13 @@ import LruEditPage from "../pages/LruEditPage";
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<h1>IATERAP Frontend Running 🚀</h1>} />
       <Route path="/health" element={<HealthCheckPage />} />
 
       <Route path="/lrus" element={<LruListPage />} />
       <Route path="/lrus/create" element={<LruCreatePage />} />
       <Route path="/lrus/:id" element={<LruDetailPage />} />
+  
       <Route path="/lrus/:id/edit" element={<LruEditPage />} />
     </Routes>
   );
