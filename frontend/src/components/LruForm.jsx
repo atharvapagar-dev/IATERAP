@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     createLru,
     updateLru,
@@ -8,13 +8,9 @@ export default function LruForm({
     initialData,
     onSuccess,
 }) {
-    const [name, setName] = useState("");
-
-    useEffect(() => {
-        if (initialData) {
-            setName(initialData.name);
-        }
-    }, [initialData]);
+    const [name, setName] = useState(
+        initialData?.name || ""
+    );
 
     const handleSubmit = async (event) => {
         event.preventDefault();

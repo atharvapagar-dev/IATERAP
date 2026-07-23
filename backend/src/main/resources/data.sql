@@ -6,6 +6,11 @@ VALUES
 ('tester', 'test@iaterap.com', 'test123', 'TEST_ENGINEER'),
 ('field', 'field@iaterap.com', 'field123', 'FIELD_ENGINEER'),
 ('viewer', 'view@iaterap.com', 'view123', 'VIEWER');
+
+INSERT INTO project (name, description)
+VALUES
+('IATERAP Demo Aircraft', 'Top-level project for the demo aircraft management flow.'),
+('Reliability Validation Program', 'Program used for subsystem and LRU tracking.');
 /*-- Initial Admin User
 INSERT INTO users ...
 

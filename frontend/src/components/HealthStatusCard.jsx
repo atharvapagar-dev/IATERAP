@@ -1,5 +1,3 @@
-import React from "react";
-
 function HealthStatusCard({ status, message }) {
   return (
     <div
