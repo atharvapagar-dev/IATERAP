@@ -14,20 +14,22 @@ public class SecurityConfig {
             throws Exception {
 
         http
-            .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
 
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                        "/api/auth/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**"
-                ).permitAll()
+                .authorizeHttpRequests(auth -> auth
+        .requestMatchers(
+                "/",
+                "/health",
+                "/api/auth/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/v3/api-docs/**"
+        ).permitAll()
 
-                .anyRequest().authenticated()
-            )
+        .anyRequest().authenticated()
+)
 
-            .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
