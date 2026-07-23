@@ -22,22 +22,43 @@ export default function AircraftListPage() {
 
     return (
         <ManagementLayout
+            eyebrow="Top hierarchy"
             title="Aircraft Management"
             description="Manage aircraft records that sit under the project layer."
         >
-            <div style={{ marginBottom: "16px" }}>
-                <button onClick={() => navigate("/aircraft/create")}>
-                    Add Aircraft
-                </button>
-            </div>
+            <div className="page-stack">
+                <div className="page-header">
+                    <div>
+                        <h2>Aircraft</h2>
+                        <p>
+                            Keep aircraft records ready for subsystem grouping and
+                            downstream LRU work.
+                        </p>
+                    </div>
 
-            <ul>
-                {aircraft.map((item) => (
-                    <li key={item.id}>
-                        {item.name} - {item.manufacturer}
-                    </li>
-                ))}
-            </ul>
+                    <div className="section-actions">
+                        <button onClick={() => navigate("/aircraft/create")}>
+                            Add Aircraft
+                        </button>
+                    </div>
+                </div>
+
+                {aircraft.length === 0 ? (
+                    <div className="empty-state">
+                        No aircraft records yet. Add the first aircraft to get
+                        started.
+                    </div>
+                ) : (
+                    <div className="card-grid">
+                        {aircraft.map((item) => (
+                            <article key={item.id} className="entity-card">
+                                <h3>{item.name}</h3>
+                                <p>{item.manufacturer}</p>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </div>
         </ManagementLayout>
     );
 }

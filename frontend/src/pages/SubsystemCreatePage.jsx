@@ -27,26 +27,47 @@ export default function SubsystemCreatePage() {
 
     return (
         <ManagementLayout
+            eyebrow="Top hierarchy"
             title="Create Subsystem"
             description="Add a new subsystem record."
         >
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    placeholder="Subsystem Name"
-                    value={name}
-                    onChange={(event) =>
-                        setName(event.target.value)
-                    }
-                />
+            <div className="page-stack">
+                <div className="page-header">
+                    <div>
+                        <h2>Subsystem details</h2>
+                        <p>
+                            Add a subsystem so the hierarchy stays structured and
+                            easy to navigate.
+                        </p>
+                    </div>
+                </div>
 
-                <br />
-                <br />
+                <form className="form-grid" onSubmit={handleSubmit}>
+                    <div className="form-row">
+                        <label htmlFor="subsystem-name">Subsystem name</label>
+                        <input
+                            id="subsystem-name"
+                            type="text"
+                            placeholder="Subsystem name"
+                            value={name}
+                            onChange={(event) =>
+                                setName(event.target.value)
+                            }
+                        />
+                    </div>
 
-                <button type="submit">
-                    Save
-                </button>
-            </form>
+                    <div className="form-actions">
+                        <button type="submit">Save Subsystem</button>
+                        <button
+                            type="button"
+                            className="button button--ghost"
+                            onClick={() => navigate("/subsystems")}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
         </ManagementLayout>
     );
 }

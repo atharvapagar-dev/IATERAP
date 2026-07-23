@@ -27,20 +27,42 @@ export default function SubsystemListPage() {
 
     return (
         <ManagementLayout
+            eyebrow="Top hierarchy"
             title="Subsystem Management"
             description="Manage subsystem definitions from the top hierarchy."
         >
-            <div style={{ marginBottom: "16px" }}>
-                <button onClick={() => navigate("/subsystems/create")}>
-                    Add Subsystem
-                </button>
-            </div>
+            <div className="page-stack">
+                <div className="page-header">
+                    <div>
+                        <h2>Subsystems</h2>
+                        <p>
+                            Define subsystem groups before moving into the LRU
+                            layer.
+                        </p>
+                    </div>
 
-            <ul>
-                {subsystems.map((item) => (
-                    <li key={item.id}>{item.name}</li>
-                ))}
-            </ul>
+                    <div className="section-actions">
+                        <button onClick={() => navigate("/subsystems/create")}>
+                            Add Subsystem
+                        </button>
+                    </div>
+                </div>
+
+                {subsystems.length === 0 ? (
+                    <div className="empty-state">
+                        No subsystems created yet. Add one to begin structuring the
+                        project.
+                    </div>
+                ) : (
+                    <div className="card-grid">
+                        {subsystems.map((item) => (
+                            <article key={item.id} className="entity-card">
+                                <h3>{item.name}</h3>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </div>
         </ManagementLayout>
     );
 }

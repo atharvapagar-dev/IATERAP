@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { healthService } from "../services/healthService";
+
 import HealthStatusCard from "../components/HealthStatusCard";
+import { healthService } from "../services/healthService";
 
 function HealthCheckPage() {
-  const [status, setStatus] = useState("Checking...");
-  const [message, setMessage] = useState("Connecting to backend...");
+    const [status, setStatus] = useState("Checking...");
+    const [message, setMessage] = useState("Connecting to backend...");
 
     useEffect(() => {
         const checkBackendHealth = async () => {
             try {
                 await healthService.checkHealth();
-
                 setStatus("Healthy");
                 setMessage("Backend is running successfully.");
             } catch {
@@ -19,15 +19,19 @@ function HealthCheckPage() {
             }
         };
 
-    checkBackendHealth();
-  }, []);
+        checkBackendHealth();
+    }, []);
 
-  return (
-    <HealthStatusCard
-      status={status}
-      message={message}
-    />
-  );
+    return (
+        <div className="app-shell">
+            <div className="app-shell__frame">
+                <HealthStatusCard
+                    status={status}
+                    message={message}
+                />
+            </div>
+        </div>
+    );
 }
 
 export default HealthCheckPage;

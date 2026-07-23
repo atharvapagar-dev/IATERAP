@@ -1,22 +1,22 @@
 function HealthStatusCard({ status, message }) {
-  return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        padding: "20px",
-        maxWidth: "400px",
-        margin: "20px auto",
-        textAlign: "center",
-      }}
-    >
-      <h2>Backend Health Status</h2>
+    const bannerClass =
+        status === "Healthy"
+            ? "status-banner status-banner--healthy"
+            : status === "Unavailable"
+              ? "status-banner status-banner--error"
+              : "status-banner status-banner--warning";
 
-      <h3>{status}</h3>
+    return (
+        <section className="hero-card">
+            <div className="hero-card__topline">
+                <span className="eyebrow">System check</span>
+                <span className={bannerClass}>{status}</span>
+            </div>
 
-      <p>{message}</p>
-    </div>
-  );
+            <h1>Backend Health Status</h1>
+            <p>{message}</p>
+        </section>
+    );
 }
 
 export default HealthStatusCard;

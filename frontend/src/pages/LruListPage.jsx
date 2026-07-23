@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { deleteLru, getLrus } from "../services/lruService";
+import ManagementLayout from "../components/ManagementLayout";
 import LruTable from "../components/LruTable";
+import { deleteLru, getLrus } from "../services/lruService";
 
 export default function LruListPage() {
     const [lrus, setLrus] = useState([]);
@@ -13,7 +14,9 @@ export default function LruListPage() {
             .then((response) => {
                 setLrus(response.data);
             })
-            .catch(console.error);
+            .catch((error) => {
+                console.error("Failed to fetch LRUs:", error);
+            });
     };
 
     useEffect(() => {
@@ -30,15 +33,42 @@ export default function LruListPage() {
     };
 
     return (
-        <div>
-            <h1>LRU List</h1>
+        <ManagementLayout
+            eyebrow="Engineering data"
+            title="LRU Management"
+            description="Browse, inspect, and update line-replaceable units inside the hierarchy."
+        >
+            <div className="page-stack">
+                <div className="stats-row">
+                    <article className="metric-card">
+                        <span className="eyebrow">Total LRUs</span>
+                        <strong>{lrus.length}</strong>
+                        <p>Loaded from the backend service.</p>
+                    </article>
+                </div>
 
-            <LruTable
-                data={lrus}
-                onView={(id) => navigate("/lrus/" + id)}
-                onEdit={(id) => navigate("/lrus/" + id + "/edit")}
-                onDelete={handleDelete}
-            />
-        </div>
+                <div className="page-header">
+                    <div>
+                        <h2>LRUs</h2>
+                        <p>
+                            Manage the inventory that sits under each subsystem.
+                        </p>
+                    </div>
+
+                    <div className="section-actions">
+                        <button onClick={() => navigate("/lrus/create")}>
+                            Add LRU
+                        </button>
+                    </div>
+                </div>
+
+                <LruTable
+                    data={lrus}
+                    onView={(id) => navigate("/lrus/" + id)}
+                    onEdit={(id) => navigate("/lrus/" + id + "/edit")}
+                    onDelete={handleDelete}
+                />
+            </div>
+        </ManagementLayout>
     );
 }
