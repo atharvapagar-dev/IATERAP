@@ -1,13 +1,22 @@
 package com.adtech.iaterap.backend.service;
 
+import com.adtech.iaterap.backend.dto.LoginResponse;
+import com.adtech.iaterap.backend.security.JwtService;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
 
-    public String login(String username, String password) {
+    private final JwtService jwtService;
 
-        // JWT logic will come here later
-        return "Login Successful for " + username;
+    public AuthService(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
+
+    public LoginResponse login(String username, String password) {
+        return new LoginResponse(
+                jwtService.generateAccessToken(username),
+                jwtService.generateRefreshToken(username)
+        );
     }
 }
