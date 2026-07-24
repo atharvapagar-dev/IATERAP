@@ -4,6 +4,7 @@ import com.adtech.iaterap.backend.entity.Interface;
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.SignalLibrary;
 import com.adtech.iaterap.backend.repository.SignalLibraryRepository;
+import com.adtech.iaterap.backend.repository.SignalRangeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +25,14 @@ class SignalLibraryServiceTest {
     @Mock
     private SignalLibraryRepository repository;
 
+    @Mock
+    private SignalRangeRepository signalRangeRepository;
+
     private SignalLibraryService service;
 
     @BeforeEach
     void setUp() {
-        service = new SignalLibraryService(repository);
+        service = new SignalLibraryService(repository, signalRangeRepository);
     }
 
     @Test
@@ -208,7 +212,9 @@ class SignalLibraryServiceTest {
     void shouldDeleteSignalLibraryById() {
         service.delete(1L);
 
+        verify(signalRangeRepository, times(1)).deleteBySignalLibraryId(1L);
         verify(repository, times(1)).deleteById(1L);
+        verifyNoMoreInteractions(signalRangeRepository);
         verifyNoMoreInteractions(repository);
     }
 }
