@@ -1,0 +1,630 @@
+{
+  "info": {
+    "_postman_id": "ai-145-signal-protocol-collection",
+    "name": "IATERAP Signal and Protocol APIs",
+    "description": "AI-145 / T3-A3 Postman requests for Signal Library, Signal Range, and Protocol Tag endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login returns access token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', response.refreshToken || '');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signal Libraries",
+      "item": [
+        {
+          "name": "Get All Signal Libraries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns signal library array', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Signal Library",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('creates signal library', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response.id).to.exist;",
+                  "  pm.collectionVariables.set('signalLibraryId', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI-145 Signal {{$timestamp}}\",\n  \"description\": \"Signal library created from the AI-145 Postman collection.\",\n  \"engineeringUnit\": \"V\",\n  \"interfaceEntity\": {\n    \"id\": {{interfaceId}}\n  },\n  \"lru\": {\n    \"id\": {{lruId}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Signal Library By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns selected signal library', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('signalLibraryId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries/{{signalLibraryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries",
+                "{{signalLibraryId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Signal Libraries By LRU",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries/by-lru/{{lruId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries",
+                "by-lru",
+                "{{lruId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Signal Libraries By Interface",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries/by-interface/{{interfaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries",
+                "by-interface",
+                "{{interfaceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Signal Library",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('updates signal library', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().engineeringUnit).to.eql('A');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI-145 Signal Updated\",\n  \"description\": \"Updated by the AI-145 Postman collection.\",\n  \"engineeringUnit\": \"A\",\n  \"interfaceEntity\": {\n    \"id\": {{interfaceId}}\n  },\n  \"lru\": {\n    \"id\": {{lruId}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries/{{signalLibraryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries",
+                "{{signalLibraryId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signal Ranges",
+      "item": [
+        {
+          "name": "Create Signal Range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('creates signal range', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response.id).to.exist;",
+                  "  pm.collectionVariables.set('signalRangeId', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI-145 Nominal Range\",\n  \"minimumValue\": 0.00,\n  \"maximumValue\": 100.00,\n  \"severity\": \"NORMAL\",\n  \"signalLibrary\": {\n    \"id\": {{signalLibraryId}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/signal-ranges",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-ranges"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Signal Ranges By Signal Library",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns ranges for signal library', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-ranges/by-signal-library/{{signalLibraryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-ranges",
+                "by-signal-library",
+                "{{signalLibraryId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Signal Range",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-ranges/{{signalRangeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-ranges",
+                "{{signalRangeId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protocol Tags",
+      "item": [
+        {
+          "name": "Get All Protocol Tags",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns protocol tag array', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Protocol Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('creates protocol tag', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response.id).to.exist;",
+                  "  pm.collectionVariables.set('protocolTagId', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI-145 Protocol {{$timestamp}}\",\n  \"value\": \"CAN2.0B\",\n  \"description\": \"Protocol tag created from the AI-145 Postman collection.\",\n  \"lru\": {\n    \"id\": {{lruId}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Protocol Tag By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags/{{protocolTagId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags",
+                "{{protocolTagId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Protocol Tags By LRU",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags/by-lru/{{lruId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags",
+                "by-lru",
+                "{{lruId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Protocol Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('updates protocol tag', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().value).to.eql('ARINC-429');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI-145 Protocol Updated\",\n  \"value\": \"ARINC-429\",\n  \"description\": \"Updated by the AI-145 Postman collection.\",\n  \"lru\": {\n    \"id\": {{lruId}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags/{{protocolTagId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags",
+                "{{protocolTagId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Protocol Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/protocol-tags/{{protocolTagId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "protocol-tags",
+                "{{protocolTagId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Signal Library",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signal-libraries/{{signalLibraryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signal-libraries",
+                "{{signalLibraryId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "interfaceId",
+      "value": "1"
+    },
+    {
+      "key": "lruId",
+      "value": "1"
+    },
+    {
+      "key": "signalLibraryId",
+      "value": ""
+    },
+    {
+      "key": "signalRangeId",
+      "value": ""
+    },
+    {
+      "key": "protocolTagId",
+      "value": ""
+    }
+  ]
+}
