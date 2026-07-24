@@ -1,11 +1,13 @@
 package com.adtech.iaterap.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "signal_libraries")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class SignalLibrary {
 
     @Id

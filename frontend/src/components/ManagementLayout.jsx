@@ -21,18 +21,18 @@ export default function ManagementLayout({
     };
 
     return (
-        <div style={{ padding: "24px" }}>
-            <header style={{ marginBottom: "20px" }}>
-                <p style={{ margin: 0, color: "#666" }}>
+        <div className="management-shell">
+            <header className="management-shell__header">
+                <p className="eyebrow">
                     IATERAP management console
                 </p>
 
-                <h1 style={{ marginTop: "8px" }}>{title}</h1>
-                <p style={{ marginTop: "8px", maxWidth: "720px" }}>
+                <h1>{title}</h1>
+                <p className="management-shell__description">
                     {description}
                 </p>
 
-                <nav style={{ marginTop: "16px" }}>
+                <nav className="management-shell__nav">
                     <Link to="/projects" style={linkStyle}>
                         Projects
                     </Link>
@@ -45,13 +45,19 @@ export default function ManagementLayout({
                     <Link to="/lrus" style={linkStyle}>
                         LRUs
                     </Link>
+                    <Link to="/signal-libraries" style={linkStyle}>
+                        Signal Libraries
+                    </Link>
+                    <Link to="/protocol-tags" style={linkStyle}>
+                        Protocol Tags
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>
                 </nav>
 
-                <div style={{ marginTop: "16px" }}>
-                    <span style={{ marginRight: "12px" }}>
+                <div className="management-shell__session">
+                    <span>
                         Session: {token ? "Active" : "Guest"}
                     </span>
                     {token ? (
@@ -62,7 +68,7 @@ export default function ManagementLayout({
                 </div>
             </header>
 
-            <main>{children}</main>
+            <main className="management-shell__content">{children}</main>
         </div>
     );
 }
