@@ -2,6 +2,8 @@ package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.entity.SignalLibrary;
 import com.adtech.iaterap.backend.repository.SignalLibraryRepository;
+import com.adtech.iaterap.backend.repository.SignalRangeRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +13,14 @@ import java.util.NoSuchElementException;
 public class SignalLibraryService {
 
     private final SignalLibraryRepository repository;
+    private final SignalRangeRepository signalRangeRepository;
 
-    public SignalLibraryService(SignalLibraryRepository repository) {
+    public SignalLibraryService(
+            SignalLibraryRepository repository,
+            SignalRangeRepository signalRangeRepository
+    ) {
         this.repository = repository;
+        this.signalRangeRepository = signalRangeRepository;
     }
 
     public List<SignalLibrary> getAll() {
@@ -51,7 +58,9 @@ public class SignalLibraryService {
         return repository.save(existing);
     }
 
+    @Transactional
     public void delete(Long id) {
+        signalRangeRepository.deleteBySignalLibraryId(id);
         repository.deleteById(id);
     }
 }

@@ -16,6 +16,14 @@ import LruListPage from "../pages/LruListPage";
 import LruCreatePage from "../pages/LruCreatePage";
 import LruDetailPage from "../pages/LruDetailPage";
 import LruEditPage from "../pages/LruEditPage";
+import SignalLibraryListPage from "../pages/SignalLibraryListPage";
+import SignalLibraryCreatePage from "../pages/SignalLibraryCreatePage";
+import SignalLibraryDetailPage from "../pages/SignalLibraryDetailPage";
+import SignalLibraryEditPage from "../pages/SignalLibraryEditPage";
+import ProtocolTagListPage from "../pages/ProtocolTagListPage";
+import ProtocolTagCreatePage from "../pages/ProtocolTagCreatePage";
+import ProtocolTagDetailPage from "../pages/ProtocolTagDetailPage";
+import ProtocolTagEditPage from "../pages/ProtocolTagEditPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
 
@@ -134,6 +142,78 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <LruEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/signal-libraries"
+                element={
+                    <ProtectedRoute>
+                        <SignalLibraryListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/signal-libraries/create"
+                element={
+                    <ProtectedRoute>
+                        <SignalLibraryCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/signal-libraries/:id"
+                element={
+                    <ProtectedRoute>
+                        <SignalLibraryDetailPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/signal-libraries/:id/edit"
+                element={
+                    <ProtectedRoute>
+                        <SignalLibraryEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/protocol-tags"
+                element={
+                    <ProtectedRoute>
+                        <ProtocolTagListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/protocol-tags/create"
+                element={
+                    <ProtectedRoute>
+                        <ProtocolTagCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/protocol-tags/:id"
+                element={
+                    <ProtectedRoute>
+                        <ProtocolTagDetailPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/protocol-tags/:id/edit"
+                element={
+                    <ProtectedRoute>
+                        <ProtocolTagEditPage />
                     </ProtectedRoute>
                 }
             />
