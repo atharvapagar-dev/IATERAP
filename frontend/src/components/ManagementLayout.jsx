@@ -51,6 +51,15 @@ export default function ManagementLayout({
                     <Link to="/protocol-tags" style={linkStyle}>
                         Protocol Tags
                     </Link>
+                    <Link to="/fault-templates" style={linkStyle}>
+                        Fault Templates
+                    </Link>
+                    <Link to="/fmea-branch-mappings" style={linkStyle}>
+                        FMEA Mappings
+                    </Link>
+                    <Link to="/audit-logs" style={linkStyle}>
+                        Audit Log
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>
