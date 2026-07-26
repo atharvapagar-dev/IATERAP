@@ -24,6 +24,19 @@ import ProtocolTagListPage from "../pages/ProtocolTagListPage";
 import ProtocolTagCreatePage from "../pages/ProtocolTagCreatePage";
 import ProtocolTagDetailPage from "../pages/ProtocolTagDetailPage";
 import ProtocolTagEditPage from "../pages/ProtocolTagEditPage";
+
+import FaultTemplateListPage from "../pages/FaultTemplateListPage";
+import FaultTemplateCreatePage from "../pages/FaultTemplateCreatePage";
+import FaultTemplateDetailPage from "../pages/FaultTemplateDetailPage";
+import FaultTemplateEditPage from "../pages/FaultTemplateEditPage";
+
+import FmeaBranchMappingListPage from "../pages/FmeaBranchMappingListPage";
+import FmeaBranchMappingCreatePage from "../pages/FmeaBranchMappingCreatePage";
+import FmeaBranchMappingDetailPage from "../pages/FmeaBranchMappingDetailPage";
+import FmeaBranchMappingEditPage from "../pages/FmeaBranchMappingEditPage";
+
+import AuditLogListPage from "../pages/AuditLogListPage";
+
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
 
@@ -214,6 +227,87 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ProtocolTagEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fault-templates"
+                element={
+                    <ProtectedRoute>
+                        <FaultTemplateListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fault-templates/create"
+                element={
+                    <ProtectedRoute>
+                        <FaultTemplateCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fault-templates/:id"
+                element={
+                    <ProtectedRoute>
+                        <FaultTemplateDetailPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fault-templates/:id/edit"
+                element={
+                    <ProtectedRoute>
+                        <FaultTemplateEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fmea-branch-mappings"
+                element={
+                    <ProtectedRoute>
+                        <FmeaBranchMappingListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fmea-branch-mappings/create"
+                element={
+                    <ProtectedRoute>
+                        <FmeaBranchMappingCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fmea-branch-mappings/:id"
+                element={
+                    <ProtectedRoute>
+                        <FmeaBranchMappingDetailPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/fmea-branch-mappings/:id/edit"
+                element={
+                    <ProtectedRoute>
+                        <FmeaBranchMappingEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/audit-logs"
+                element={
+                    <ProtectedRoute>
+                        <AuditLogListPage />
                     </ProtectedRoute>
                 }
             />
