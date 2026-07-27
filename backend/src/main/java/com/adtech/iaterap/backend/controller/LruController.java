@@ -24,4 +24,19 @@ public class LruController {
     public Lru create(@RequestBody Lru lru) {
         return service.save(lru);
     }
+
+    @GetMapping("/{id}")
+    public Lru getById(@PathVariable Long id) {
+        return service.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Lru update(@PathVariable Long id, @RequestBody Lru lru) {
+        return service.update(id, lru);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }
