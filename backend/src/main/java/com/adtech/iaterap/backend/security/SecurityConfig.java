@@ -50,6 +50,8 @@ public class SecurityConfig {
                 ).permitAll()
 
                 // Every other endpoint requires a valid, authenticated JWT.
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
                 .anyRequest().authenticated()
             )
 
