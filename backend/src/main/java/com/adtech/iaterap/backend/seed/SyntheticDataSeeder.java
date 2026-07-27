@@ -105,7 +105,7 @@ public class SyntheticDataSeeder implements CommandLineRunner {
                 faultTemplateName,
                 "FLT-" + lru.getId(),
                 "Synthetic FMEA-derived fault scenario seeded for demonstration only.",
-                "HIGH",
+                "CRITICAL",
                 lru
         ));
 
