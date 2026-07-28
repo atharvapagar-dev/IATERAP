@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.service.LruService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class LruController {
     }
 
     @PostMapping
-    public Lru create(@RequestBody Lru lru) {
+    public Lru create(@Valid @RequestBody Lru lru) {
         return service.save(lru);
     }
 
@@ -31,7 +32,7 @@ public class LruController {
     }
 
     @PutMapping("/{id}")
-    public Lru update(@PathVariable Long id, @RequestBody Lru lru) {
+    public Lru update(@PathVariable Long id, @Valid @RequestBody Lru lru) {
         return service.update(id, lru);
     }
 

@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 public class Connector {
@@ -9,6 +10,7 @@ public class Connector {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     private String name;
 
     public Connector() {}
