@@ -33,6 +33,8 @@ public class ConnectorController {
 
     @PutMapping("/{id}")
     public Connector update(@PathVariable Long id, @Valid @RequestBody Connector connector) {
+
+    public Connector update(@PathVariable Long id, @RequestBody Connector connector) {
         return service.update(id, connector);
     }
 

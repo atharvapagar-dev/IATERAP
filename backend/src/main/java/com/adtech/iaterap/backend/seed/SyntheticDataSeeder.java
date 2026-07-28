@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Synthetic data seeder — LRU / Interface / Connector / Signal Library /
+ * Synthetic data seeder - LRU / Interface / Connector / Signal Library /
  * Signal Range / Protocol Tag / Fault Template.
  *
  * SYNTHETIC DATA NOTICE: every entity created here is fictitious and
@@ -52,7 +52,7 @@ public class SyntheticDataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (lruRepository.count() > 0) {
-            return; // already seeded — idempotent no-op
+            return; // already seeded - idempotent no-op
         }
 
         seedLru("LRU-ENG-REG-01 (Synthetic Engine Regulator)",
