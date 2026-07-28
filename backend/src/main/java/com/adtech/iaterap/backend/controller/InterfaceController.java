@@ -24,4 +24,19 @@ public class InterfaceController {
     public Interface create(@RequestBody Interface iface) {
         return service.save(iface);
     }
+
+    @GetMapping("/{id}")
+    public Interface getById(@PathVariable Long id) {
+        return service.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Interface update(@PathVariable Long id, @RequestBody Interface iface) {
+        return service.update(id, iface);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }

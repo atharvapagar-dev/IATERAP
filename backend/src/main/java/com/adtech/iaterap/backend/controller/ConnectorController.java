@@ -24,4 +24,19 @@ public class ConnectorController {
     public Connector create(@RequestBody Connector connector) {
         return service.save(connector);
     }
+
+    @GetMapping("/{id}")
+    public Connector getById(@PathVariable Long id) {
+        return service.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Connector update(@PathVariable Long id, @RequestBody Connector connector) {
+        return service.update(id, connector);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }
