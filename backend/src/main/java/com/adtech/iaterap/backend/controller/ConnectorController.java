@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.entity.Connector;
 import com.adtech.iaterap.backend.service.ConnectorService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class ConnectorController {
     }
 
     @PostMapping
-    public Connector create(@RequestBody Connector connector) {
+    public Connector create(@Valid @RequestBody Connector connector) {
         return service.save(connector);
     }
 
@@ -31,7 +32,7 @@ public class ConnectorController {
     }
 
     @PutMapping("/{id}")
-    public Connector update(@PathVariable Long id, @RequestBody Connector connector) {
+    public Connector update(@PathVariable Long id, @Valid @RequestBody Connector connector) {
         return service.update(id, connector);
     }
 

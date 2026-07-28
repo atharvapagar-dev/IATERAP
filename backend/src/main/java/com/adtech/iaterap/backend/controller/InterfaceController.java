@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.entity.Interface;
 import com.adtech.iaterap.backend.service.InterfaceService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class InterfaceController {
     }
 
     @PostMapping
-    public Interface create(@RequestBody Interface iface) {
+    public Interface create(@Valid @RequestBody Interface iface) {
         return service.save(iface);
     }
 
@@ -31,7 +32,7 @@ public class InterfaceController {
     }
 
     @PutMapping("/{id}")
-    public Interface update(@PathVariable Long id, @RequestBody Interface iface) {
+    public Interface update(@PathVariable Long id, @Valid @RequestBody Interface iface) {
         return service.update(id, iface);
     }
 
