@@ -33,8 +33,6 @@ public class InterfaceController {
 
     @PutMapping("/{id}")
     public Interface update(@PathVariable Long id, @Valid @RequestBody Interface iface) {
-
-    public Interface update(@PathVariable Long id, @RequestBody Interface iface) {
         return service.update(id, iface);
     }
 
