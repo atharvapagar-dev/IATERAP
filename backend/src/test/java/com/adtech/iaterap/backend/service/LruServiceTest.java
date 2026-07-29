@@ -10,6 +10,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -72,6 +76,52 @@ class LruServiceTest {
         assertEquals("Power Supply", result.getName());
 
         verify(repository, times(1)).save(lru);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldGetLruByIdSuccessfully() {
+        Lru lru = new Lru("LRU-1");
+        when(repository.findById(1L)).thenReturn(Optional.of(lru));
+
+        Lru result = service.getById(1L);
+
+        assertEquals("LRU-1", result.getName());
+        verify(repository, times(1)).findById(1L);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldThrowWhenLruNotFound() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> service.getById(99L));
+
+        verify(repository, times(1)).findById(99L);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldUpdateLruSuccessfully() {
+        Lru existing = new Lru("Old Name");
+        Lru incoming = new Lru("New Name");
+
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(existing)).thenReturn(existing);
+
+        Lru result = service.update(1L, incoming);
+
+        assertEquals("New Name", result.getName());
+        verify(repository, times(1)).findById(1L);
+        verify(repository, times(1)).save(existing);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldDeleteLruSuccessfully() {
+        service.delete(1L);
+
+        verify(repository, times(1)).deleteById(1L);
         verifyNoMoreInteractions(repository);
     }
 }
