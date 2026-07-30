@@ -3,6 +3,7 @@ package com.adtech.iaterap.backend.seed;
 import com.adtech.iaterap.backend.entity.*;
 import com.adtech.iaterap.backend.repository.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ import java.util.List;
  * the LRU table is empty, so it is safe to leave enabled across restarts.
  */
 @Component
+@Profile("synthetic-data")
 public class SyntheticDataSeeder implements CommandLineRunner {
 
     private final LruRepository lruRepository;
@@ -51,9 +53,7 @@ public class SyntheticDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (lruRepository.count() > 0) {
-            return; // already seeded - idempotent no-op
-        }
+        reset();
 
         seedLru("LRU-ENG-REG-01 (Synthetic Engine Regulator)",
                 "Discrete I/O Interface DIO-7 (Synthetic)",
@@ -75,6 +75,28 @@ public class SyntheticDataSeeder implements CommandLineRunner {
                 "CONN-DIO-19-C (Synthetic)",
                 "RS-422-SIM (Synthetic)",
                 "Intermittent Fault - DIO-19 (Synthetic)");
+    }
+
+    /**
+     * Clears all previously seeded synthetic data (children first, to respect FK
+     * constraints) so re-running this profile always produces a fresh, known-good
+     * demo dataset - this is what makes the profile repeatable and reset-on-demand,
+     * per AI-158.
+     */
+    /**
+     * Clears all previously seeded synthetic data (children first, to respect
+     * FK constraints) so re-running this profile always produces a fresh,
+     * known-good demo dataset - this is what makes the profile repeatable
+     * and reset-on-demand, per AI-158.
+     */
+    private void reset() {
+        signalRangeRepository.deleteAllInBatch();
+        signalLibraryRepository.deleteAllInBatch();
+        protocolTagRepository.deleteAllInBatch();
+        faultTemplateRepository.deleteAllInBatch();
+        connectorRepository.deleteAllInBatch();
+        interfaceRepository.deleteAllInBatch();
+        lruRepository.deleteAllInBatch();
     }
 
     private void seedLru(
