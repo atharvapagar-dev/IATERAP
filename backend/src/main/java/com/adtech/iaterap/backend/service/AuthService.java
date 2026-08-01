@@ -3,7 +3,6 @@ package com.adtech.iaterap.backend.service;
 import com.adtech.iaterap.backend.dto.LoginResponse;
 import com.adtech.iaterap.backend.entity.User;
 import com.adtech.iaterap.backend.repository.UserRepository;
-import com.adtech.iaterap.backend.security.JwtService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,16 +15,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService
+            RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public LoginResponse login(String username, String password) {
@@ -41,9 +40,21 @@ public class AuthService {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
 
-        return new LoginResponse(
-                jwtService.generateAccessToken(user.getUsername()),
-                jwtService.generateRefreshToken(user.getUsername())
-        );
+        return refreshTokenService.issue(user);
+    }
+
+    /**
+     * Rotates a refresh token: the presented token is revoked and a brand
+     * new access/refresh token pair is issued in its place. AI-156.
+     */
+    public LoginResponse refresh(String refreshToken) {
+        return refreshTokenService.rotate(refreshToken);
+    }
+
+    /**
+     * Revokes the session backing a single refresh token. AI-156.
+     */
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
     }
 }

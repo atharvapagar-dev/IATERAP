@@ -45,4 +45,17 @@ class JwtServiceTest {
 
         assertFalse(jwtService.validateToken(tamperedToken));
     }
+
+    @Test
+    void shouldEmbedUniqueTokenIdInEachRefreshToken() {
+        String tokenOne = jwtService.generateRefreshToken("tester");
+        String tokenTwo = jwtService.generateRefreshToken("tester");
+
+        String tokenIdOne = jwtService.extractTokenId(tokenOne);
+        String tokenIdTwo = jwtService.extractTokenId(tokenTwo);
+
+        assertNotNull(tokenIdOne);
+        assertNotNull(tokenIdTwo);
+        assertNotEquals(tokenIdOne, tokenIdTwo);
+    }
 }

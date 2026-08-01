@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -35,11 +36,37 @@ public class JwtService {
     }
 
     public String generateAccessToken(String username) {
-        return buildToken(username, "access", accessTokenTtl);
+        return buildToken(username, "access", accessTokenTtl, null);
     }
 
+    /**
+     * Generates a refresh token carrying a random, unique "jti" claim.
+     * AI-156's rotation/revocation tracking (see RefreshTokenService) looks
+     * up refresh tokens by this id rather than by the raw token value, so
+     * a revoked or rotated-away token can be rejected even though its
+     * signature and expiry both still check out.
+     */
     public String generateRefreshToken(String username) {
-        return buildToken(username, "refresh", refreshTokenTtl);
+        return buildToken(username, "refresh", refreshTokenTtl, UUID.randomUUID().toString());
+    }
+
+    public Duration getRefreshTokenTtl() {
+        return refreshTokenTtl;
+    }
+
+    /**
+     * Extracts the "jti" claim from a refresh token. Only meaningful for
+     * tokens produced by {@link #generateRefreshToken(String)}; callers
+     * must call {@link #validateToken(String)} first to confirm the
+     * signature/expiry are valid before trusting this value.
+     */
+    public String extractTokenId(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getId();
     }
 
     public boolean validateToken(String token) {
@@ -66,15 +93,22 @@ public class JwtService {
     private String buildToken(
             String username,
             String tokenType,
-            Duration ttl
+            Duration ttl,
+            String tokenId
     ) {
         Instant now = Instant.now();
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(ttl)))
-                .claim("token_type", tokenType)
+                .claim("token_type", tokenType);
+
+        if (tokenId != null) {
+            builder = builder.id(tokenId);
+        }
+
+        return builder
                 .signWith(signingKey)
                 .compact();
     }

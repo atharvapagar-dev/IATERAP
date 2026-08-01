@@ -4,7 +4,6 @@ import com.adtech.iaterap.backend.dto.LoginResponse;
 import com.adtech.iaterap.backend.entity.Role;
 import com.adtech.iaterap.backend.entity.User;
 import com.adtech.iaterap.backend.repository.UserRepository;
-import com.adtech.iaterap.backend.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +16,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,13 +31,13 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtService jwtService;
+    private RefreshTokenService refreshTokenService;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, passwordEncoder, jwtService);
+        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService);
     }
 
     private User existingAdmin() {
@@ -46,20 +46,21 @@ class AuthServiceTest {
 
     @Test
     void shouldReturnBothTokensOnValidLogin() {
+        User admin = existingAdmin();
+        LoginResponse issuedTokens = new LoginResponse("access-token", "refresh-token");
+
         when(userRepository.findByUsername("admin"))
-                .thenReturn(Optional.of(existingAdmin()));
+                .thenReturn(Optional.of(admin));
         when(passwordEncoder.matches("admin123", "hashed-password"))
                 .thenReturn(true);
-        when(jwtService.generateAccessToken("admin")).thenReturn("access-token");
-        when(jwtService.generateRefreshToken("admin")).thenReturn("refresh-token");
+        when(refreshTokenService.issue(admin)).thenReturn(issuedTokens);
 
         LoginResponse response = authService.login("admin", "admin123");
 
         assertEquals("access-token", response.getAccessToken());
         assertEquals("refresh-token", response.getRefreshToken());
 
-        verify(jwtService).generateAccessToken("admin");
-        verify(jwtService).generateRefreshToken("admin");
+        verify(refreshTokenService).issue(admin);
     }
 
     @Test
@@ -72,7 +73,7 @@ class AuthServiceTest {
                 () -> authService.login("ghost", "anything")
         );
 
-        verify(jwtService, never()).generateAccessToken(org.mockito.ArgumentMatchers.anyString());
+        verify(refreshTokenService, never()).issue(any());
     }
 
     @Test
@@ -87,7 +88,7 @@ class AuthServiceTest {
                 () -> authService.login("admin", "wrong-password")
         );
 
-        verify(jwtService, never()).generateAccessToken(org.mockito.ArgumentMatchers.anyString());
+        verify(refreshTokenService, never()).issue(any());
     }
 
     @Test
@@ -104,5 +105,24 @@ class AuthServiceTest {
                 BadCredentialsException.class,
                 () -> authService.login("admin", "")
         );
+    }
+
+    @Test
+    void shouldDelegateRefreshToRefreshTokenService() {
+        LoginResponse rotated = new LoginResponse("new-access-token", "new-refresh-token");
+        when(refreshTokenService.rotate("old-refresh-token")).thenReturn(rotated);
+
+        LoginResponse response = authService.refresh("old-refresh-token");
+
+        assertEquals("new-access-token", response.getAccessToken());
+        assertEquals("new-refresh-token", response.getRefreshToken());
+        verify(refreshTokenService).rotate("old-refresh-token");
+    }
+
+    @Test
+    void shouldDelegateLogoutToRefreshTokenService() {
+        authService.logout("some-refresh-token");
+
+        verify(refreshTokenService).revoke("some-refresh-token");
     }
 }
