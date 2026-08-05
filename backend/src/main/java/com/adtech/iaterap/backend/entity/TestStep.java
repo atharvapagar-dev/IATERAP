@@ -16,6 +16,10 @@ public class TestStep {
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "test_procedure_id")
+    private TestProcedure testProcedure;
+
+    @ManyToOne
     @JoinColumn(name = "interface_id")
     private Interface interfaceEntity;
 
@@ -91,6 +95,8 @@ public class TestStep {
     public TestStep() {}
 
     public Long getId() { return id; }
+    public TestProcedure getTestProcedure() { return testProcedure; }
+    public void setTestProcedure(TestProcedure testProcedure) { this.testProcedure = testProcedure; }
     public Interface getInterfaceEntity() { return interfaceEntity; }
     public void setInterfaceEntity(Interface interfaceEntity) { this.interfaceEntity = interfaceEntity; }
     public Connector getConnector() { return connector; }
