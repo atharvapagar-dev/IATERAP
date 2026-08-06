@@ -152,11 +152,11 @@ public class SyntheticDataSeeder implements CommandLineRunner {
     ) {
         Lru lru = lruRepository.save(new Lru(lruName));
 
-        Interface discreteInterface = interfaceRepository.save(new Interface(discreteInterfaceName));
-        Interface analogInterface = interfaceRepository.save(new Interface(analogInterfaceName));
+        Interface discreteInterface = interfaceRepository.save(new Interface(discreteInterfaceName, lru));
+        Interface analogInterface = interfaceRepository.save(new Interface(analogInterfaceName, lru));
 
         connectorRepository.saveAll(List.of(
-                new Connector(connectorName)
+                new Connector(connectorName, lru)
         ));
 
         protocolTagRepository.save(new ProtocolTag(

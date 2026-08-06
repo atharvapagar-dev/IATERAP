@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.entity.Connector;
+import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.repository.ConnectorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ConnectorServiceTest {
 
+    private final Lru testLru = new Lru("Test LRU");
+
     @Mock
     private ConnectorRepository repository;
 
@@ -32,8 +35,8 @@ class ConnectorServiceTest {
     @Test
     void shouldReturnAllConnectors() {
         List<Connector> connectors = List.of(
-                new Connector("CONN-A"),
-                new Connector("CONN-B")
+                new Connector("CONN-A", testLru),
+                new Connector("CONN-B", testLru)
         );
 
         when(repository.findAll()).thenReturn(connectors);
@@ -61,7 +64,7 @@ class ConnectorServiceTest {
 
     @Test
     void shouldSaveConnectorSuccessfully() {
-        Connector connector = new Connector("CONN-C");
+        Connector connector = new Connector("CONN-C", testLru);
 
         when(repository.save(connector)).thenReturn(connector);
 
@@ -76,7 +79,7 @@ class ConnectorServiceTest {
 
     @Test
     void shouldGetConnectorByIdSuccessfully() {
-        Connector connector = new Connector("CONN-A");
+        Connector connector = new Connector("CONN-A", testLru);
         when(repository.findById(1L)).thenReturn(Optional.of(connector));
 
         Connector result = service.getById(1L);
@@ -98,8 +101,8 @@ class ConnectorServiceTest {
 
     @Test
     void shouldUpdateConnectorSuccessfully() {
-        Connector existing = new Connector("Old");
-        Connector incoming = new Connector("New");
+        Connector existing = new Connector("Old", testLru);
+        Connector incoming = new Connector("New", testLru);
 
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
@@ -120,3 +123,4 @@ class ConnectorServiceTest {
         verifyNoMoreInteractions(repository);
     }
 }
+

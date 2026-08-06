@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.entity.Interface;
+import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.repository.InterfaceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class InterfaceServiceTest {
 
+    private final Lru testLru = new Lru("Test LRU");
+
     @Mock
     private InterfaceRepository repository;
 
@@ -35,8 +38,8 @@ class InterfaceServiceTest {
     void shouldReturnAllInterfaces() {
 
         List<Interface> interfaces = List.of(
-                new Interface("CAN"),
-                new Interface("ARINC")
+                new Interface("CAN", testLru),
+                new Interface("ARINC", testLru)
         );
 
         when(repository.findAll()).thenReturn(interfaces);
@@ -66,7 +69,7 @@ class InterfaceServiceTest {
     @Test
     void shouldSaveInterfaceSuccessfully() {
 
-        Interface iface = new Interface("Ethernet");
+        Interface iface = new Interface("Ethernet", testLru);
 
         when(repository.save(iface)).thenReturn(iface);
 
@@ -81,7 +84,7 @@ class InterfaceServiceTest {
 
     @Test
     void shouldGetInterfaceByIdSuccessfully() {
-        Interface iface = new Interface("CAN");
+        Interface iface = new Interface("CAN", testLru);
         when(repository.findById(1L)).thenReturn(Optional.of(iface));
 
         Interface result = service.getById(1L);
@@ -103,8 +106,8 @@ class InterfaceServiceTest {
 
     @Test
     void shouldUpdateInterfaceSuccessfully() {
-        Interface existing = new Interface("Old");
-        Interface incoming = new Interface("New");
+        Interface existing = new Interface("Old", testLru);
+        Interface incoming = new Interface("New", testLru);
 
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
@@ -125,3 +128,5 @@ class InterfaceServiceTest {
         verifyNoMoreInteractions(repository);
     }
 }
+
+
