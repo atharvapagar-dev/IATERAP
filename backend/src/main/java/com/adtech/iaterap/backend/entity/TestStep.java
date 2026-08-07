@@ -39,6 +39,15 @@ public class TestStep {
     @JoinColumn(name = "fault_template_id")
     private FaultTemplate faultCategory;
 
+    /**
+     * Denormalized from testProcedure.getLru().getId() via the lifecycle
+     * hooks below. Backs the composite FKs added in V13 that reject any
+     * Interface/Connector/SignalLibrary/ProtocolTag/FaultTemplate reference
+     * belonging to a different LRU than this steps TestProcedure.
+     */
+    @Column(name = "lru_id")
+    private Long lruId;
+
     @NotBlank
     @Column(name = "expected_behaviour", length = 1000, nullable = false)
     private String expectedBehaviour;
@@ -94,7 +103,19 @@ public class TestStep {
 
     public TestStep() {}
 
+    @PrePersist
+    @PreUpdate
+    private void syncLruIdFromTestProcedure() {
+        try {
+            this.lruId = (testProcedure != null && testProcedure.getLru() != null)
+                    ? testProcedure.getLru().getId()
+                    : null;
+        } catch (RuntimeException e) {
+            this.lruId = null;
+        }
+    }
     public Long getId() { return id; }
+    public Long getLruId() { return lruId; }
     public TestProcedure getTestProcedure() { return testProcedure; }
     public void setTestProcedure(TestProcedure testProcedure) { this.testProcedure = testProcedure; }
     public Interface getInterfaceEntity() { return interfaceEntity; }
