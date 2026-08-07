@@ -246,4 +246,40 @@ class TestStepFkValidationTest {
             "Saving a TestStep with a non-existent test_procedure_id should violate the FK constraint"
         );
     }
+
+    @Test
+    void testStepRejectsInterfaceFromDifferentLru() {
+        List<Lru> lrus = lruRepository.findAll();
+        Lru lruA = lrus.get(0);
+        Lru lruB = lrus.get(1);
+
+        Interface interfaceFromLruA = interfaceRepository.findAll().stream()
+                .filter(i -> i.getLru().getId().equals(lruA.getId()))
+                .findFirst()
+                .orElseThrow();
+
+        TestProcedure procedureUnderLruB = new TestProcedure();
+        procedureUnderLruB.setLru(lruB);
+        procedureUnderLruB.setName("Test Procedure - Cross-LRU Rejection (Synthetic)");
+        procedureUnderLruB.setApprovalStatus("DRAFT");
+        procedureUnderLruB = testProcedureRepository.save(procedureUnderLruB);
+
+        TestStep step = new TestStep();
+        step.setInterfaceEntity(interfaceFromLruA);
+        step.setTestProcedure(procedureUnderLruB);
+        step.setExpectedBehaviour("Should never persist - cross-LRU reference");
+        step.setAcceptanceCriteria("Should never persist");
+        step.setPassFailCriteria("Should never persist");
+        step.setExecutionOrder(1);
+        step.setApprovalStatus("DRAFT");
+
+        TestProcedure finalProcedure = procedureUnderLruB;
+        assertThrows(
+            DataIntegrityViolationException.class,
+            () -> testStepRepository.save(step),
+            "A TestStep whose TestProcedure belongs to LRU B must not accept an Interface belonging to LRU A"
+        );
+
+        testProcedureRepository.delete(finalProcedure);
+    }
 }
