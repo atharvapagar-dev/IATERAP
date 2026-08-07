@@ -41,7 +41,8 @@ class JwtServiceTest {
     @Test
     void shouldRejectTamperedToken() {
         String token = jwtService.generateAccessToken("viewer");
-        String tamperedToken = token.substring(0, token.length() - 1) + "x";
+        int midpoint = token.length() / 2;
+        String tamperedToken = token.substring(0, midpoint) + "x" + token.substring(midpoint + 1);
 
         assertFalse(jwtService.validateToken(tamperedToken));
     }
@@ -59,3 +60,4 @@ class JwtServiceTest {
         assertNotEquals(tokenIdOne, tokenIdTwo);
     }
 }
+
