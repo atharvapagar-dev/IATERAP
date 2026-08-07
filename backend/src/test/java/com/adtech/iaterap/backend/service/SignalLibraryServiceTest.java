@@ -41,14 +41,14 @@ class SignalLibraryServiceTest {
                 "Engine Signals",
                 "Core engine telemetry",
                 "V",
-                new Interface("CAN"),
+                new Interface("CAN", new Lru("Interface Owner LRU")),
                 new Lru("Flight Control Unit")
         );
         SignalLibrary second = new SignalLibrary(
                 "Cabin Signals",
                 "Cabin monitoring telemetry",
                 "A",
-                new Interface("ARINC 429"),
+                new Interface("ARINC 429", new Lru("Interface Owner LRU")),
                 new Lru("Power Distribution Unit")
         );
 
@@ -81,7 +81,7 @@ class SignalLibraryServiceTest {
                 "Flight Control Signals",
                 "Signals for flight control",
                 "V",
-                new Interface("CAN"),
+                new Interface("CAN", new Lru("Interface Owner LRU")),
                 new Lru("Flight Control Unit")
         );
 
@@ -102,7 +102,7 @@ class SignalLibraryServiceTest {
                 "Flight Control Signals",
                 "Signals for flight control",
                 "V",
-                new Interface("CAN"),
+                new Interface("CAN", new Lru("Interface Owner LRU")),
                 new Lru("Flight Control Unit")
         );
 
@@ -138,7 +138,7 @@ class SignalLibraryServiceTest {
                 "Power Monitoring Signals",
                 "Power distribution monitoring",
                 "A",
-                new Interface("ARINC 429"),
+                new Interface("ARINC 429", new Lru("Interface Owner LRU")),
                 new Lru("Power Distribution Unit")
         );
 
@@ -159,7 +159,7 @@ class SignalLibraryServiceTest {
                 "Engine CAN Signals",
                 "CAN bus engine telemetry",
                 "V",
-                new Interface("CAN"),
+                new Interface("CAN", new Lru("Interface Owner LRU")),
                 new Lru("Engine Control LRU")
         );
 
@@ -181,7 +181,7 @@ class SignalLibraryServiceTest {
                 "Old Name",
                 "Old description",
                 "V",
-                new Interface("CAN"),
+                new Interface("CAN", new Lru("Interface Owner LRU")),
                 new Lru("Flight Control Unit")
         );
         existing.setName("Old Name");
@@ -190,7 +190,7 @@ class SignalLibraryServiceTest {
                 "Updated Name",
                 "Updated description",
                 "A",
-                new Interface("ARINC 429"),
+                new Interface("ARINC 429", new Lru("Interface Owner LRU")),
                 new Lru("Power Distribution Unit")
         );
 
@@ -218,3 +218,4 @@ class SignalLibraryServiceTest {
         verifyNoMoreInteractions(repository);
     }
 }
+
