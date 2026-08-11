@@ -1,5 +1,6 @@
 package com.adtech.iaterap.backend.exception;
 
+import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -92,6 +93,20 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
+    @ExceptionHandler(InvalidApprovalTransitionException.class)
+    public ResponseEntity<ApiError> handleInvalidApprovalTransition(
+            InvalidApprovalTransitionException exception
+    ) {
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
 
     // --------- TEMPORARY DEBUGGING CODE ---------
