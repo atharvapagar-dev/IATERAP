@@ -1,0 +1,54 @@
+version: "3.9"
+
+# IATERAP local development stack.
+#
+# Ports and credentials mirror the values already hardcoded in
+# backend/src/main/resources/application.properties (Postgres on 5432,
+# db "iaterap", user "iaterap") so bringing this stack up does not require
+# changing existing backend configuration.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iaterap-postgres
+    environment:
+      POSTGRES_DB: iaterap
+      POSTGRES_USER: iaterap
+      POSTGRES_PASSWORD: iaterap123
+    ports:
+      - "5432:5432"
+    volumes:
+      - iaterap-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iaterap -d iaterap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: iaterap-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iaterap
+      SPRING_DATASOURCE_USERNAME: iaterap
+      SPRING_DATASOURCE_PASSWORD: iaterap123
+    ports:
+      - "8080:8080"
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: iaterap-ai-service
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  iaterap-postgres-data:
