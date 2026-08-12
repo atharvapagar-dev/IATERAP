@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "IATERAP Procedure Builder",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "procedureId", "value": "1" },
+    { "key": "stepId", "value": "1" },
+    { "key": "lruId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "List Test Procedures",
+      "request": { "method": "GET", "url": "{{baseUrl}}/procedures" }
+    },
+    {
+      "name": "Create Test Procedure",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/procedures",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lru\": { \"id\": {{lruId}} },\n  \"name\": \"Postman Test Procedure\",\n  \"description\": \"Created via Postman collection\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Test Procedure by ID",
+      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/{{procedureId}}" }
+    },
+    {
+      "name": "Get Test Procedures by LRU",
+      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/by-lru/{{lruId}}" }
+    },
+    {
+      "name": "Get Test Procedures by Status",
+      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/by-status/DRAFT" }
+    },
+    {
+      "name": "Update Test Procedure",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/procedures/{{procedureId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lru\": { \"id\": {{lruId}} },\n  \"name\": \"Updated Procedure Name\",\n  \"description\": \"Updated via Postman\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List Steps for a Procedure",
+      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/{{procedureId}}/steps" }
+    },
+    {
+      "name": "Add Step to Procedure",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/procedures/{{procedureId}}/steps",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expectedBehaviour\": \"Signal present on interface\",\n  \"acceptanceCriteria\": \"Signal within nominal range\",\n  \"passFailCriteria\": \"Pass if within range, fail otherwise\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Reorder Steps",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/procedures/{{procedureId}}/steps/reorder",
+        "body": {
+          "mode": "raw",
+          "raw": "[2, 1, 3]"
+        }
+      }
+    },
+    {
+      "name": "Get Step by ID",
+      "request": { "method": "GET", "url": "{{baseUrl}}/steps/{{stepId}}" }
+    },
+    {
+      "name": "Update Step",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/steps/{{stepId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expectedBehaviour\": \"Updated expected behaviour\",\n  \"acceptanceCriteria\": \"Updated acceptance criteria\",\n  \"passFailCriteria\": \"Updated pass/fail criteria\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Delete Step",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/steps/{{stepId}}" }
+    },
+    {
+      "name": "Delete Test Procedure",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/procedures/{{procedureId}}" }
+    }
+  ]
+}
