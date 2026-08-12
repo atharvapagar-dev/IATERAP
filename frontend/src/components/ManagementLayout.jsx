@@ -57,6 +57,9 @@ export default function ManagementLayout({
                     <Link to="/fmea-branch-mappings" style={linkStyle}>
                         FMEA Mappings
                     </Link>
+                    <Link to="/procedures" style={linkStyle}>
+                        Test Procedures
+                    </Link>
                     <Link to="/audit-logs" style={linkStyle}>
                         Audit Log
                     </Link>

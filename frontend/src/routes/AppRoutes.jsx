@@ -37,6 +37,10 @@ import FmeaBranchMappingEditPage from "../pages/FmeaBranchMappingEditPage";
 
 import AuditLogListPage from "../pages/AuditLogListPage";
 
+import TestProcedureListPage from "../pages/TestProcedureListPage";
+import TestProcedureCreatePage from "../pages/TestProcedureCreatePage";
+import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
+
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
 
@@ -299,6 +303,33 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <FmeaBranchMappingEditPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/procedures"
+                element={
+                    <ProtectedRoute>
+                        <TestProcedureListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/procedures/create"
+                element={
+                    <ProtectedRoute>
+                        <TestProcedureCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/procedures/:id/builder"
+                element={
+                    <ProtectedRoute>
+                        <ProcedureBuilderPage />
                     </ProtectedRoute>
                 }
             />
