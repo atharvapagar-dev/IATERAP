@@ -60,7 +60,7 @@ class ReviewerCommentServiceTest {
 
     private String snapshotContaining(Long... stepIds) throws Exception {
         List<Object> nodes = List.of(stepIds).stream()
-                .map(id -> java.util.Map.of("id", id))
+                .<Object>map(id -> java.util.Map.of("id", id))
                 .toList();
         return objectMapper.writeValueAsString(nodes);
     }
