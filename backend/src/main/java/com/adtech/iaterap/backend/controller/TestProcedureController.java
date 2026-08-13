@@ -3,42 +3,58 @@ package com.adtech.iaterap.backend.controller;
 import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
+import com.adtech.iaterap.backend.entity.TestProcedure;
+import com.adtech.iaterap.backend.entity.TestStep;
 import com.adtech.iaterap.backend.service.TestProcedureService;
+import com.adtech.iaterap.backend.service.TestStepService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * Minimal backend surface required by the Procedure Builder (PART L) and
- * Version Management (PART O/T). Deliberately small: one create endpoint,
- * one update endpoint (which both add/edit/reorder/remove steps AND, when
- * content actually changed, create a new revision), and read endpoints for
- * the procedure itself and its revision history.
+ * Procedure Builder backend + Version Management API.
  */
 @RestController
 @RequestMapping("/api/procedures")
 public class TestProcedureController {
 
-    private final TestProcedureService service;
+    private final TestProcedureService procedureService;
+    private final TestStepService stepService;
 
-    public TestProcedureController(TestProcedureService service) {
-        this.service = service;
+    public TestProcedureController(
+            TestProcedureService procedureService,
+            TestStepService stepService
+    ) {
+        this.procedureService = procedureService;
+        this.stepService = stepService;
     }
 
     @GetMapping
     public List<TestProcedureResponse> getAll() {
-        return service.getAll();
+        return procedureService.getAll();
     }
 
     @GetMapping("/{id}")
     public TestProcedureResponse getById(@PathVariable Long id) {
-        return service.getById(id);
+        return procedureService.getById(id);
+    }
+
+    @GetMapping("/by-lru/{lruId}")
+    public List<TestProcedureResponse> getByLruId(@PathVariable Long lruId) {
+        return procedureService.getByLruId(lruId);
+    }
+
+    @GetMapping("/by-status/{status}")
+    public List<TestProcedureResponse> getByStatus(@PathVariable String status) {
+        return procedureService.getByApprovalStatus(status);
     }
 
     @PostMapping
-    public TestProcedureResponse create(@Valid @RequestBody TestProcedureRequest request) {
-        return service.save(request);
+    public TestProcedureResponse create(
+            @Valid @RequestBody TestProcedureRequest request
+    ) {
+        return procedureService.save(request);
     }
 
     @PutMapping("/{id}")
@@ -46,12 +62,40 @@ public class TestProcedureController {
             @PathVariable Long id,
             @Valid @RequestBody TestProcedureRequest request
     ) {
-        return service.update(id, request);
+        return procedureService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        procedureService.delete(id);
+    }
+
+    @GetMapping("/{id}/steps")
+    public List<TestStep> getSteps(@PathVariable Long id) {
+        return stepService.getByProcedureId(id);
+    }
+
+    @PostMapping("/{id}/steps")
+    public TestStep addStep(
+            @PathVariable Long id,
+            @Valid @RequestBody TestStep step
+    ) {
+        return stepService.addStep(id, step);
+    }
+
+    @PatchMapping("/{id}/steps/reorder")
+    public List<TestStep> reorderSteps(
+            @PathVariable Long id,
+            @RequestBody List<Long> orderedStepIds
+    ) {
+        return stepService.reorderSteps(id, orderedStepIds);
     }
 
     @GetMapping("/{id}/history")
-    public List<ProcedureHistoryResponse> getHistory(@PathVariable Long id) {
-        return service.getHistory(id);
+    public List<ProcedureHistoryResponse> getHistory(
+            @PathVariable Long id
+    ) {
+        return procedureService.getHistory(id);
     }
 
     @GetMapping("/{id}/history/{versionNumber}")
@@ -59,6 +103,6 @@ public class TestProcedureController {
             @PathVariable Long id,
             @PathVariable Integer versionNumber
     ) {
-        return service.getRevision(id, versionNumber);
+        return procedureService.getRevision(id, versionNumber);
     }
 }
