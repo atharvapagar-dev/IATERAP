@@ -1,82 +1,64 @@
 package com.adtech.iaterap.backend.controller;
 
-import com.adtech.iaterap.backend.entity.TestProcedure;
-import com.adtech.iaterap.backend.entity.TestStep;
+import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
+import com.adtech.iaterap.backend.dto.TestProcedureRequest;
+import com.adtech.iaterap.backend.dto.TestProcedureResponse;
 import com.adtech.iaterap.backend.service.TestProcedureService;
-import com.adtech.iaterap.backend.service.TestStepService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Minimal backend surface required by the Procedure Builder (PART L) and
+ * Version Management (PART O/T). Deliberately small: one create endpoint,
+ * one update endpoint (which both add/edit/reorder/remove steps AND, when
+ * content actually changed, create a new revision), and read endpoints for
+ * the procedure itself and its revision history.
+ */
 @RestController
 @RequestMapping("/api/procedures")
 public class TestProcedureController {
 
-    private final TestProcedureService procedureService;
-    private final TestStepService stepService;
+    private final TestProcedureService service;
 
-    public TestProcedureController(
-            TestProcedureService procedureService,
-            TestStepService stepService
-    ) {
-        this.procedureService = procedureService;
-        this.stepService = stepService;
+    public TestProcedureController(TestProcedureService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public List<TestProcedure> getAll() {
-        return procedureService.getAll();
+    public List<TestProcedureResponse> getAll() {
+        return service.getAll();
     }
 
     @GetMapping("/{id}")
-    public TestProcedure getById(@PathVariable Long id) {
-        return procedureService.getById(id);
-    }
-
-    @GetMapping("/by-lru/{lruId}")
-    public List<TestProcedure> getByLruId(@PathVariable Long lruId) {
-        return procedureService.getByLruId(lruId);
-    }
-
-    @GetMapping("/by-status/{status}")
-    public List<TestProcedure> getByStatus(@PathVariable String status) {
-        return procedureService.getByApprovalStatus(status);
+    public TestProcedureResponse getById(@PathVariable Long id) {
+        return service.getById(id);
     }
 
     @PostMapping
-    public TestProcedure create(@Valid @RequestBody TestProcedure procedure) {
-        return procedureService.create(procedure);
+    public TestProcedureResponse create(@Valid @RequestBody TestProcedureRequest request) {
+        return service.save(request);
     }
 
     @PutMapping("/{id}")
-    public TestProcedure update(
+    public TestProcedureResponse update(
             @PathVariable Long id,
-            @Valid @RequestBody TestProcedure procedure
+            @Valid @RequestBody TestProcedureRequest request
     ) {
-        return procedureService.update(id, procedure);
+        return service.update(id, request);
     }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        procedureService.delete(id);
+    @GetMapping("/{id}/history")
+    public List<ProcedureHistoryResponse> getHistory(@PathVariable Long id) {
+        return service.getHistory(id);
     }
 
-    @GetMapping("/{id}/steps")
-    public List<TestStep> getSteps(@PathVariable Long id) {
-        return stepService.getByProcedureId(id);
-    }
-
-    @PostMapping("/{id}/steps")
-    public TestStep addStep(@PathVariable Long id, @Valid @RequestBody TestStep step) {
-        return stepService.addStep(id, step);
-    }
-
-    @PatchMapping("/{id}/steps/reorder")
-    public List<TestStep> reorderSteps(
+    @GetMapping("/{id}/history/{versionNumber}")
+    public ProcedureHistoryResponse getRevision(
             @PathVariable Long id,
-            @RequestBody List<Long> orderedStepIds
+            @PathVariable Integer versionNumber
     ) {
-        return stepService.reorderSteps(id, orderedStepIds);
+        return service.getRevision(id, versionNumber);
     }
 }
