@@ -47,8 +47,6 @@ public class ProcedureHistory {
     @NotBlank
     @Column(name = "approval_status", nullable = false)
     private String approvalStatus;
-
-    @Lob
     @NotBlank
     @Column(name = "steps_snapshot", columnDefinition = "TEXT", nullable = false)
     private String stepsSnapshot;
