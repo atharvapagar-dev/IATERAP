@@ -95,6 +95,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(
+            IllegalStateException exception
+    ) {
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
     @ExceptionHandler(InvalidApprovalTransitionException.class)
     public ResponseEntity<ApiError> handleInvalidApprovalTransition(
             InvalidApprovalTransitionException exception
