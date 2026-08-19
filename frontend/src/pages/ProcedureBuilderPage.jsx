@@ -4,74 +4,165 @@ import { useNavigate, useParams } from "react-router-dom";
 import ManagementLayout from "../components/ManagementLayout";
 import TestStepCard from "../components/TestStepCard";
 import { testProcedureService } from "../services/testProcedureService";
-import { testStepService } from "../services/testStepService";
+import { testBlockService } from "../services/testBlockService";
+import { getLrus } from "../services/lruService";
+import { interfaceService } from "../services/interfaceService";
+import { connectorService } from "../services/connectorService";
+import { signalLibraryService } from "../services/signalLibraryService";
+import { protocolTagService } from "../services/protocolTagService";
+import { faultTemplateService } from "../services/faultTemplateService";
+
+let tempKeyCounter = 0;
+function nextTempKey() {
+    tempKeyCounter += 1;
+    return `new-${tempKeyCounter}`;
+}
 
 export default function ProcedureBuilderPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const isEditing = Boolean(id);
 
-    const [procedure, setProcedure] = useState(null);
+    const [lruId, setLruId] = useState("");
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
     const [steps, setSteps] = useState([]);
+    const [meta, setMeta] = useState(null);
+
+    const [lrus, setLrus] = useState([]);
+    const [blocks, setBlocks] = useState([]);
+
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
 
     const loadAll = useCallback(async () => {
         try {
             setError("");
-            const [procRes, stepsRes] = await Promise.all([
-                testProcedureService.getProcedureById(id),
-                testProcedureService.getSteps(id),
+            const [lruRes, blockRes] = await Promise.all([
+                getLrus(),
+                testBlockService.getAllBlocks(),
             ]);
-            setProcedure(procRes.data);
-            setSteps(stepsRes.data);
+            setLrus(lruRes.data);
+            setBlocks(blockRes.data.filter((b) => b.expectedBehaviour));
+
+            if (isEditing) {
+                const procRes = await testProcedureService.getProcedureById(id);
+                const procedure = procRes.data;
+                setLruId(procedure.lruId ? String(procedure.lruId) : "");
+                setName(procedure.name || "");
+                setDescription(procedure.description || "");
+                setSteps((procedure.steps || []).map((s) => ({ ...s })));
+                setMeta({
+                    approvalStatus: procedure.approvalStatus,
+                    versionNumber: procedure.versionNumber,
+                });
+            }
         } catch (fetchError) {
             console.error("Failed to load Procedure Builder data:", fetchError);
             setError("Unable to load this Test Procedure right now.");
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, isEditing]);
 
     useEffect(() => {
         void loadAll();
     }, [loadAll]);
 
-    const handleAddStep = async (stepPayload) => {
-        await testProcedureService.addStep(id, stepPayload);
-        await loadAll();
+    const handleAddStep = (payload) => {
+        setSteps((current) => [...current, { ...payload, id: null, _key: nextTempKey() }]);
     };
 
-    const handleUpdateStep = async (stepId, stepPayload) => {
-        await testStepService.updateStep(stepId, stepPayload);
-        await loadAll();
+    const handleUpdateStep = (index, payload) => {
+        setSteps((current) => current.map((s, i) => (i === index ? { ...s, ...payload } : s)));
     };
 
-    const handleDeleteStep = async (stepId) => {
-        const isConfirmed = window.confirm("Delete this Test Step? This action cannot be undone.");
+    const handleDeleteStep = (index) => {
+        const isConfirmed = window.confirm("Remove this Test Step? It will be deleted when you save the procedure.");
         if (!isConfirmed) {
             return;
         }
-
-        await testStepService.deleteStep(stepId);
-        await loadAll();
+        setSteps((current) => current.filter((_, i) => i !== index));
     };
 
-    const handleMove = async (index, direction) => {
+    const handleMove = (index, direction) => {
         const targetIndex = index + direction;
         if (targetIndex < 0 || targetIndex >= steps.length) {
             return;
         }
+        setSteps((current) => {
+            const reordered = [...current];
+            const [moved] = reordered.splice(index, 1);
+            reordered.splice(targetIndex, 0, moved);
+            return reordered;
+        });
+    };
 
-        const reordered = [...steps];
-        const [moved] = reordered.splice(index, 1);
-        reordered.splice(targetIndex, 0, moved);
+    const handleSaveProcedure = async () => {
+        setError("");
+        setSuccessMessage("");
 
+        if (!lruId) {
+            setError("Choose an LRU before saving.");
+            return;
+        }
+        if (!name.trim()) {
+            setError("Name is required.");
+            return;
+        }
+        if (!steps.length) {
+            setError("Add at least one Test Step before saving - the backend requires every procedure to have at least one step.");
+            return;
+        }
+
+        const payload = {
+            lruId: Number(lruId),
+            name: name.trim(),
+            description: description.trim(),
+            steps: steps.map((s, index) => ({
+                id: s.id || undefined,
+                interfaceId: s.interfaceId || null,
+                connectorId: s.connectorId || null,
+                signalLibraryId: s.signalLibraryId || null,
+                protocolTagId: s.protocolTagId || null,
+                faultCategoryId: s.faultCategoryId || null,
+                expectedBehaviour: s.expectedBehaviour,
+                expectedRange: s.expectedRange,
+                calibrationRequirement: s.calibrationRequirement,
+                safetyNotes: s.safetyNotes,
+                acceptanceCriteria: s.acceptanceCriteria,
+                preconditions: s.preconditions,
+                dependencies: s.dependencies,
+                executionOrder: index + 1,
+                postConditions: s.postConditions,
+                passFailCriteria: s.passFailCriteria,
+                expectedObservation: s.expectedObservation,
+                engineerRemarks: s.engineerRemarks,
+            })),
+        };
+
+        setSaving(true);
         try {
-            await testProcedureService.reorderSteps(id, reordered.map((s) => s.id));
-            await loadAll();
-        } catch (reorderError) {
-            console.error("Failed to reorder Test Steps:", reorderError);
-            setError("Could not reorder Test Steps. Please try again.");
+            if (isEditing) {
+                const response = await testProcedureService.updateProcedure(id, payload);
+                setMeta({
+                    approvalStatus: response.data.approvalStatus,
+                    versionNumber: response.data.versionNumber,
+                });
+                setSteps((response.data.steps || []).map((s) => ({ ...s })));
+                setSuccessMessage(`Saved - now at version ${response.data.versionNumber}.`);
+            } else {
+                const response = await testProcedureService.createProcedure(payload);
+                navigate(`/procedures/${response.data.id}/builder`, { replace: true });
+            }
+        } catch (saveError) {
+            console.error("Failed to save Test Procedure:", saveError);
+            const message = saveError?.response?.data?.message || "Could not save this Test Procedure. Please review the form and try again.";
+            setError(message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -83,23 +174,43 @@ export default function ProcedureBuilderPage() {
         );
     }
 
-    if (error || !procedure) {
-        return (
-            <ManagementLayout title="Procedure Builder" description="">
-                <p style={{ color: "var(--danger)" }}>{error || "Test Procedure not found."}</p>
-                <button onClick={() => navigate("/procedures")}>Back to Procedures</button>
-            </ManagementLayout>
-        );
-    }
+    const lruName = lrus.find((l) => String(l.id) === String(lruId))?.name;
 
     return (
         <ManagementLayout
-            title={`Procedure Builder - ${procedure.name}`}
-            description={`LRU: ${procedure.lru?.name || "-"}  |  Status: ${procedure.approvalStatus}  |  Version: ${procedure.versionNumber}`}
+            title={isEditing ? `Procedure Builder - ${name || "..."}` : "Create Test Procedure"}
+            description={
+                isEditing && meta
+                    ? `LRU: ${lruName || "-"}  |  Status: ${meta.approvalStatus}  |  Version: ${meta.versionNumber}`
+                    : "A Test Procedure belongs to a single LRU; its Test Steps can only reference that LRU's own Interfaces, Connectors, Signals, Protocol Tags and Fault Templates. At least one Test Step is required."
+            }
         >
             {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
+            {successMessage ? <p className="helper-text">{successMessage}</p> : null}
 
-            <section className="stack">
+            <section className="form-card">
+                <div className="form-grid form-grid--two">
+                    <div className="form-field">
+                        <label>LRU *</label>
+                        <select value={lruId} onChange={(e) => setLruId(e.target.value)}>
+                            <option value="">Select an LRU</option>
+                            {lrus.map((l) => (
+                                <option key={l.id} value={l.id}>{l.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-field">
+                        <label>Name *</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
+                    <div className="form-field" style={{ gridColumn: "1 / -1" }}>
+                        <label>Description</label>
+                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+                    </div>
+                </div>
+            </section>
+
+            <section className="stack" style={{ marginTop: "16px" }}>
                 {!steps.length ? (
                     <div className="empty-state">
                         No Test Steps yet. Add the first one below.
@@ -107,11 +218,11 @@ export default function ProcedureBuilderPage() {
                 ) : (
                     steps.map((step, index) => (
                         <TestStepCard
-                            key={step.id}
+                            key={step.id || step._key}
                             step={step}
-                            lruId={procedure.lru?.id}
-                            onSave={(payload) => handleUpdateStep(step.id, payload)}
-                            onDelete={handleDeleteStep}
+                            lruId={lruId}
+                            onSave={(payload) => handleUpdateStep(index, payload)}
+                            onDelete={() => handleDeleteStep(index)}
                             onMoveUp={() => handleMove(index, -1)}
                             onMoveDown={() => handleMove(index, 1)}
                             isFirst={index === 0}
@@ -122,10 +233,178 @@ export default function ProcedureBuilderPage() {
 
                 <TestStepCard
                     step={null}
-                    lruId={procedure.lru?.id}
+                    lruId={lruId}
                     onSave={handleAddStep}
                 />
             </section>
+
+            {isEditing ? (
+                <InsertTestBlockPanel
+                    procedureId={id}
+                    lruId={lruId}
+                    blocks={blocks}
+                    onInserted={loadAll}
+                />
+            ) : null}
+
+            <div className="form-actions" style={{ marginTop: "16px" }}>
+                <button onClick={handleSaveProcedure} disabled={saving}>
+                    {saving ? "Saving..." : "Save Procedure"}
+                </button>
+            </div>
         </ManagementLayout>
+    );
+}
+
+function InsertTestBlockPanel({ procedureId, lruId, blocks, onInserted }) {
+    const [blockId, setBlockId] = useState("");
+    const [interfaceId, setInterfaceId] = useState("");
+    const [connectorId, setConnectorId] = useState("");
+    const [signalLibraryId, setSignalLibraryId] = useState("");
+    const [protocolTagId, setProtocolTagId] = useState("");
+    const [faultCategoryId, setFaultCategoryId] = useState("");
+
+    const [interfaces, setInterfaces] = useState([]);
+    const [connectors, setConnectors] = useState([]);
+    const [signalLibraries, setSignalLibraries] = useState([]);
+    const [protocolTags, setProtocolTags] = useState([]);
+    const [faultTemplates, setFaultTemplates] = useState([]);
+
+    const [inserting, setInserting] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (!lruId) {
+            return;
+        }
+        const loadOptions = async () => {
+            try {
+                const [ifaceRes, connRes, sigRes, protoRes, faultRes] = await Promise.all([
+                    interfaceService.getInterfacesByLruId(lruId),
+                    connectorService.getConnectorsByLruId(lruId),
+                    signalLibraryService.getSignalLibrariesByLruId(lruId),
+                    protocolTagService.getProtocolTagsByLruId(lruId),
+                    faultTemplateService.getFaultTemplatesByLruId(lruId),
+                ]);
+                setInterfaces(ifaceRes.data);
+                setConnectors(connRes.data);
+                setSignalLibraries(sigRes.data);
+                setProtocolTags(protoRes.data);
+                setFaultTemplates(faultRes.data);
+            } catch (fetchError) {
+                console.error("Failed to load reference options for Test Block insert:", fetchError);
+            }
+        };
+        void loadOptions();
+    }, [lruId]);
+
+    const handleInsert = async () => {
+        setError("");
+        if (!blockId || !interfaceId || !connectorId || !signalLibraryId || !protocolTagId || !faultCategoryId) {
+            setError("Choose a Test Block and all five bindings before inserting.");
+            return;
+        }
+
+        setInserting(true);
+        try {
+            await testBlockService.insertIntoProcedure(blockId, {
+                testProcedureId: Number(procedureId),
+                interfaceId: Number(interfaceId),
+                connectorId: Number(connectorId),
+                signalLibraryId: Number(signalLibraryId),
+                protocolTagId: Number(protocolTagId),
+                faultCategoryId: Number(faultCategoryId),
+            });
+            setBlockId("");
+            setInterfaceId("");
+            setConnectorId("");
+            setSignalLibraryId("");
+            setProtocolTagId("");
+            setFaultCategoryId("");
+            await onInserted();
+        } catch (insertError) {
+            console.error("Failed to insert Test Block into procedure:", insertError);
+            const message = insertError?.response?.data?.message || "Could not insert this Test Block.";
+            setError(message);
+        } finally {
+            setInserting(false);
+        }
+    };
+
+    if (!blocks.length) {
+        return null;
+    }
+
+    return (
+        <section className="form-card" style={{ marginTop: "16px" }}>
+            <p className="helper-text">
+                Insert a reusable Test Block from the shared library as a new step in this procedure.
+            </p>
+
+            <div className="form-grid form-grid--two">
+                <div className="form-field">
+                    <label>Test Block *</label>
+                    <select value={blockId} onChange={(e) => setBlockId(e.target.value)}>
+                        <option value="">Select a Test Block</option>
+                        {blocks.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name} (used {b.usageCount}x)</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-field">
+                    <label>Interface *</label>
+                    <select value={interfaceId} onChange={(e) => setInterfaceId(e.target.value)}>
+                        <option value="">Select</option>
+                        {interfaces.map((i) => (
+                            <option key={i.id} value={i.id}>{i.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-field">
+                    <label>Connector *</label>
+                    <select value={connectorId} onChange={(e) => setConnectorId(e.target.value)}>
+                        <option value="">Select</option>
+                        {connectors.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-field">
+                    <label>Signal Library *</label>
+                    <select value={signalLibraryId} onChange={(e) => setSignalLibraryId(e.target.value)}>
+                        <option value="">Select</option>
+                        {signalLibraries.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-field">
+                    <label>Protocol Tag *</label>
+                    <select value={protocolTagId} onChange={(e) => setProtocolTagId(e.target.value)}>
+                        <option value="">Select</option>
+                        {protocolTags.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-field">
+                    <label>Fault Category *</label>
+                    <select value={faultCategoryId} onChange={(e) => setFaultCategoryId(e.target.value)}>
+                        <option value="">Select</option>
+                        {faultTemplates.map((f) => (
+                            <option key={f.id} value={f.id}>{f.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
+
+            <div className="form-actions">
+                <button onClick={handleInsert} disabled={inserting}>
+                    {inserting ? "Inserting..." : "Insert Test Block"}
+                </button>
+            </div>
+        </section>
     );
 }
