@@ -37,13 +37,12 @@ class JwtServiceTest {
         assertTrue(jwtService.validateToken(token));
         assertEquals("tester", jwtService.extractUsername(token));
     }
-
     @Test
     void shouldRejectTamperedToken() {
         String token = jwtService.generateAccessToken("viewer");
-        int midpoint = token.length() / 2;
-        String tamperedToken = token.substring(0, midpoint) + "x" + token.substring(midpoint + 1);
-
+        // Corrupt the signature segment's final character — must always be rejected.
+        String tamperedToken = token.substring(0, token.length() - 1)
+                + (token.charAt(token.length() - 1) == 'A' ? 'B' : 'A');
         assertFalse(jwtService.validateToken(tamperedToken));
     }
 
