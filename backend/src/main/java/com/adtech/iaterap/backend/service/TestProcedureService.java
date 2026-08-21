@@ -230,6 +230,7 @@ public class TestProcedureService {
         history.setName(procedure.getName());
         history.setDescription(procedure.getDescription());
         history.setLruId(procedure.getLru().getId());
+        history.setLruName(procedure.getLru().getName());
         history.setApprovalStatus(procedure.getApprovalStatus());
         history.setStepsSnapshot(serializeSteps(orderedSteps(procedure)));
         history.setCreatedBy(resolveActor());
@@ -250,6 +251,7 @@ public class TestProcedureService {
         return java.util.Objects.equals(latest.getName(), procedure.getName())
                 && java.util.Objects.equals(latest.getDescription(), procedure.getDescription())
                 && java.util.Objects.equals(latest.getLruId(), procedure.getLru().getId())
+                && java.util.Objects.equals(latest.getLruName(), procedure.getLru().getName())
                 && java.util.Objects.equals(latest.getApprovalStatus(), procedure.getApprovalStatus())
                 && java.util.Objects.equals(latest.getStepsSnapshot(), candidateStepsSnapshot);
     }

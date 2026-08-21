@@ -268,6 +268,7 @@ class TestProcedureServiceTest {
         latest.setName("Proc C");
         latest.setDescription("desc");
         latest.setLruId(1L);
+        latest.setLruName("LRU-1");
         latest.setApprovalStatus("DRAFT");
         latest.setStepsSnapshot(matchingSnapshot);
         when(procedureHistoryRepository.findTopByTestProcedureIdOrderByVersionNumberDesc(300L))
