@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.dto;
 
 import com.adtech.iaterap.backend.entity.TestStep;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class TestStepResponse {
 
@@ -68,6 +69,62 @@ public class TestStepResponse {
         r.approvalStatus = s.getApprovalStatus();
         r.versionNumber = s.getVersionNumber();
         return r;
+    }
+
+    /**
+     * AI-182 / T7-B1: reconstructs a TestStepResponse from one element of a
+     * {@code ProcedureHistory.stepsSnapshot} JSON array (itself originally
+     * written by serializing a {@code List<TestStepResponse>} at save
+     * time - see {@code TestProcedureService#serializeSteps}).
+     *
+     * <p>This class intentionally exposes no setters (it is a read-only
+     * response DTO), so it cannot be deserialized via standard Jackson bean
+     * binding; this factory mirrors {@link #fromEntity(TestStep)} to
+     * rebuild an instance directly from the parsed JSON tree instead.</p>
+     */
+    public static TestStepResponse fromSnapshot(JsonNode node) {
+        TestStepResponse r = new TestStepResponse();
+        r.id = longOrNull(node, "id");
+        r.interfaceId = longOrNull(node, "interfaceId");
+        r.interfaceName = textOrNull(node, "interfaceName");
+        r.connectorId = longOrNull(node, "connectorId");
+        r.connectorName = textOrNull(node, "connectorName");
+        r.signalLibraryId = longOrNull(node, "signalLibraryId");
+        r.signalLibraryName = textOrNull(node, "signalLibraryName");
+        r.protocolTagId = longOrNull(node, "protocolTagId");
+        r.protocolTagName = textOrNull(node, "protocolTagName");
+        r.faultCategoryId = longOrNull(node, "faultCategoryId");
+        r.faultCategoryName = textOrNull(node, "faultCategoryName");
+        r.expectedBehaviour = textOrNull(node, "expectedBehaviour");
+        r.expectedRange = textOrNull(node, "expectedRange");
+        r.calibrationRequirement = textOrNull(node, "calibrationRequirement");
+        r.safetyNotes = textOrNull(node, "safetyNotes");
+        r.acceptanceCriteria = textOrNull(node, "acceptanceCriteria");
+        r.preconditions = textOrNull(node, "preconditions");
+        r.dependencies = textOrNull(node, "dependencies");
+        r.executionOrder = intOrNull(node, "executionOrder");
+        r.postConditions = textOrNull(node, "postConditions");
+        r.passFailCriteria = textOrNull(node, "passFailCriteria");
+        r.expectedObservation = textOrNull(node, "expectedObservation");
+        r.engineerRemarks = textOrNull(node, "engineerRemarks");
+        r.approvalStatus = textOrNull(node, "approvalStatus");
+        r.versionNumber = intOrNull(node, "versionNumber");
+        return r;
+    }
+
+    private static Long longOrNull(JsonNode node, String field) {
+        JsonNode v = node.get(field);
+        return (v == null || v.isNull()) ? null : v.asLong();
+    }
+
+    private static Integer intOrNull(JsonNode node, String field) {
+        JsonNode v = node.get(field);
+        return (v == null || v.isNull()) ? null : v.asInt();
+    }
+
+    private static String textOrNull(JsonNode node, String field) {
+        JsonNode v = node.get(field);
+        return (v == null || v.isNull()) ? null : v.asText();
     }
 
     public Long getId() { return id; }

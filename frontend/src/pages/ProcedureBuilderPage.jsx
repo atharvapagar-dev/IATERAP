@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import ManagementLayout from "../components/ManagementLayout";
 import TestStepCard from "../components/TestStepCard";
+import StepComparisonCard from "../components/StepComparisonCard";
 import { testProcedureService } from "../services/testProcedureService";
 import { testBlockService } from "../services/testBlockService";
 import { getLrus } from "../services/lruService";
@@ -11,8 +12,10 @@ import { connectorService } from "../services/connectorService";
 import { signalLibraryService } from "../services/signalLibraryService";
 import { protocolTagService } from "../services/protocolTagService";
 import { faultTemplateService } from "../services/faultTemplateService";
+import { versionComparisonService } from "../services/versionComparisonService";
 
 let tempKeyCounter = 0;
+
 function nextTempKey() {
     tempKeyCounter += 1;
     return `new-${tempKeyCounter}`;
@@ -37,23 +40,36 @@ export default function ProcedureBuilderPage() {
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
+    // AI-182/AI-183: Version Comparison
+    const [showCompare, setShowCompare] = useState(false);
+    const [history, setHistory] = useState([]);
+    const [fromVersion, setFromVersion] = useState("");
+    const [toVersion, setToVersion] = useState("");
+    const [comparison, setComparison] = useState(null);
+    const [comparing, setComparing] = useState(false);
+    const [compareError, setCompareError] = useState("");
+
     const loadAll = useCallback(async () => {
         try {
             setError("");
+
             const [lruRes, blockRes] = await Promise.all([
                 getLrus(),
                 testBlockService.getAllBlocks(),
             ]);
+
             setLrus(lruRes.data);
             setBlocks(blockRes.data.filter((b) => b.expectedBehaviour));
 
             if (isEditing) {
                 const procRes = await testProcedureService.getProcedureById(id);
                 const procedure = procRes.data;
+
                 setLruId(procedure.lruId ? String(procedure.lruId) : "");
                 setName(procedure.name || "");
                 setDescription(procedure.description || "");
                 setSteps((procedure.steps || []).map((s) => ({ ...s })));
+
                 setMeta({
                     approvalStatus: procedure.approvalStatus,
                     versionNumber: procedure.versionNumber,
@@ -72,26 +88,45 @@ export default function ProcedureBuilderPage() {
     }, [loadAll]);
 
     const handleAddStep = (payload) => {
-        setSteps((current) => [...current, { ...payload, id: null, _key: nextTempKey() }]);
+        setSteps((current) => [
+            ...current,
+            {
+                ...payload,
+                id: null,
+                _key: nextTempKey(),
+            },
+        ]);
     };
 
     const handleUpdateStep = (index, payload) => {
-        setSteps((current) => current.map((s, i) => (i === index ? { ...s, ...payload } : s)));
+        setSteps((current) =>
+            current.map((s, i) =>
+                i === index ? { ...s, ...payload } : s
+            )
+        );
     };
 
     const handleDeleteStep = (index) => {
-        const isConfirmed = window.confirm("Remove this Test Step? It will be deleted when you save the procedure.");
+        const isConfirmed = window.confirm(
+            "Remove this Test Step? It will be deleted when you save the procedure."
+        );
+
         if (!isConfirmed) {
             return;
         }
-        setSteps((current) => current.filter((_, i) => i !== index));
+
+        setSteps((current) =>
+            current.filter((_, i) => i !== index)
+        );
     };
 
     const handleMove = (index, direction) => {
         const targetIndex = index + direction;
+
         if (targetIndex < 0 || targetIndex >= steps.length) {
             return;
         }
+
         setSteps((current) => {
             const reordered = [...current];
             const [moved] = reordered.splice(index, 1);
@@ -108,12 +143,16 @@ export default function ProcedureBuilderPage() {
             setError("Choose an LRU before saving.");
             return;
         }
+
         if (!name.trim()) {
             setError("Name is required.");
             return;
         }
+
         if (!steps.length) {
-            setError("Add at least one Test Step before saving - the backend requires every procedure to have at least one step.");
+            setError(
+                "Add at least one Test Step before saving - the backend requires every procedure to have at least one step."
+            );
             return;
         }
 
@@ -121,6 +160,7 @@ export default function ProcedureBuilderPage() {
             lruId: Number(lruId),
             name: name.trim(),
             description: description.trim(),
+
             steps: steps.map((s, index) => ({
                 id: s.id || undefined,
                 interfaceId: s.interfaceId || null,
@@ -144,73 +184,223 @@ export default function ProcedureBuilderPage() {
         };
 
         setSaving(true);
+
         try {
             if (isEditing) {
-                const response = await testProcedureService.updateProcedure(id, payload);
+                const response =
+                    await testProcedureService.updateProcedure(id, payload);
+
                 setMeta({
                     approvalStatus: response.data.approvalStatus,
                     versionNumber: response.data.versionNumber,
                 });
-                setSteps((response.data.steps || []).map((s) => ({ ...s })));
-                setSuccessMessage(`Saved - now at version ${response.data.versionNumber}.`);
+
+                setSteps(
+                    (response.data.steps || []).map((s) => ({ ...s }))
+                );
+
+                setSuccessMessage(
+                    `Saved - now at version ${response.data.versionNumber}.`
+                );
             } else {
-                const response = await testProcedureService.createProcedure(payload);
-                navigate(`/procedures/${response.data.id}/builder`, { replace: true });
+                const response =
+                    await testProcedureService.createProcedure(payload);
+
+                navigate(
+                    `/procedures/${response.data.id}/builder`,
+                    { replace: true }
+                );
             }
         } catch (saveError) {
-            console.error("Failed to save Test Procedure:", saveError);
-            const message = saveError?.response?.data?.message || "Could not save this Test Procedure. Please review the form and try again.";
+            console.error(
+                "Failed to save Test Procedure:",
+                saveError
+            );
+
+            const message =
+                saveError?.response?.data?.message ||
+                "Could not save this Test Procedure. Please review the form and try again.";
+
             setError(message);
         } finally {
             setSaving(false);
         }
     };
 
+    const handleToggleCompare = async () => {
+        const opening = !showCompare;
+
+        setShowCompare(opening);
+
+        if (opening && history.length === 0) {
+            try {
+                const historyRes =
+                    await versionComparisonService.getHistory(id);
+
+                setHistory(historyRes.data);
+
+                if (historyRes.data.length >= 2) {
+                    setFromVersion(
+                        String(historyRes.data[0].versionNumber)
+                    );
+
+                    setToVersion(
+                        String(
+                            historyRes.data[
+                                historyRes.data.length - 1
+                            ].versionNumber
+                        )
+                    );
+                }
+            } catch (historyError) {
+                console.error(
+                    "Failed to load revision history:",
+                    historyError
+                );
+
+                setCompareError(
+                    "Unable to load revision history for this Test Procedure."
+                );
+            }
+        }
+    };
+
+    const handleCompare = async () => {
+        if (!fromVersion || !toVersion) {
+            return;
+        }
+
+        setComparing(true);
+        setCompareError("");
+        setComparison(null);
+
+        try {
+            const compareRes =
+                await versionComparisonService.compareVersions(
+                    id,
+                    fromVersion,
+                    toVersion
+                );
+
+            setComparison(compareRes.data);
+        } catch (compareErrorResponse) {
+            console.error(
+                "Failed to compare Test Procedure revisions:",
+                compareErrorResponse
+            );
+
+            setCompareError(
+                compareErrorResponse?.response?.data?.message ||
+                    "Unable to compare these revisions. Please check the version numbers and try again."
+            );
+        } finally {
+            setComparing(false);
+        }
+    };
+
     if (loading) {
         return (
-            <ManagementLayout title="Procedure Builder" description="Loading...">
-                <p className="helper-text">Loading Procedure Builder...</p>
+            <ManagementLayout
+                title="Procedure Builder"
+                description="Loading..."
+            >
+                <p className="helper-text">
+                    Loading Procedure Builder...
+                </p>
             </ManagementLayout>
         );
     }
 
-    const lruName = lrus.find((l) => String(l.id) === String(lruId))?.name;
+    const lruName = lrus.find(
+        (l) => String(l.id) === String(lruId)
+    )?.name;
 
     return (
         <ManagementLayout
-            title={isEditing ? `Procedure Builder - ${name || "..."}` : "Create Test Procedure"}
+            title={
+                isEditing
+                    ? `Procedure Builder - ${name || "..."}`
+                    : "Create Test Procedure"
+            }
             description={
                 isEditing && meta
                     ? `LRU: ${lruName || "-"}  |  Status: ${meta.approvalStatus}  |  Version: ${meta.versionNumber}`
                     : "A Test Procedure belongs to a single LRU; its Test Steps can only reference that LRU's own Interfaces, Connectors, Signals, Protocol Tags and Fault Templates. At least one Test Step is required."
             }
         >
-            {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
-            {successMessage ? <p className="helper-text">{successMessage}</p> : null}
+            {error ? (
+                <p style={{ color: "var(--danger)" }}>
+                    {error}
+                </p>
+            ) : null}
+
+            {successMessage ? (
+                <p className="helper-text">
+                    {successMessage}
+                </p>
+            ) : null}
 
             <section className="form-card">
                 <div className="form-grid form-grid--two">
                     <div className="form-field">
                         <label>LRU *</label>
-                        <select value={lruId} onChange={(e) => setLruId(e.target.value)}>
-                            <option value="">Select an LRU</option>
+
+                        <select
+                            value={lruId}
+                            onChange={(e) =>
+                                setLruId(e.target.value)
+                            }
+                        >
+                            <option value="">
+                                Select an LRU
+                            </option>
+
                             {lrus.map((l) => (
-                                <option key={l.id} value={l.id}>{l.name}</option>
+                                <option
+                                    key={l.id}
+                                    value={l.id}
+                                >
+                                    {l.name}
+                                </option>
                             ))}
                         </select>
                     </div>
+
                     <div className="form-field">
                         <label>Name *</label>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) =>
+                                setName(e.target.value)
+                            }
+                        />
                     </div>
-                    <div className="form-field" style={{ gridColumn: "1 / -1" }}>
+
+                    <div
+                        className="form-field"
+                        style={{
+                            gridColumn: "1 / -1",
+                        }}
+                    >
                         <label>Description</label>
-                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+
+                        <textarea
+                            value={description}
+                            onChange={(e) =>
+                                setDescription(e.target.value)
+                            }
+                            rows={2}
+                        />
                     </div>
                 </div>
             </section>
 
-            <section className="stack" style={{ marginTop: "16px" }}>
+            <section
+                className="stack"
+                style={{ marginTop: "16px" }}
+            >
                 {!steps.length ? (
                     <div className="empty-state">
                         No Test Steps yet. Add the first one below.
@@ -221,12 +411,22 @@ export default function ProcedureBuilderPage() {
                             key={step.id || step._key}
                             step={step}
                             lruId={lruId}
-                            onSave={(payload) => handleUpdateStep(index, payload)}
-                            onDelete={() => handleDeleteStep(index)}
-                            onMoveUp={() => handleMove(index, -1)}
-                            onMoveDown={() => handleMove(index, 1)}
+                            onSave={(payload) =>
+                                handleUpdateStep(index, payload)
+                            }
+                            onDelete={() =>
+                                handleDeleteStep(index)
+                            }
+                            onMoveUp={() =>
+                                handleMove(index, -1)
+                            }
+                            onMoveDown={() =>
+                                handleMove(index, 1)
+                            }
                             isFirst={index === 0}
-                            isLast={index === steps.length - 1}
+                            isLast={
+                                index === steps.length - 1
+                            }
                         />
                     ))
                 )}
@@ -247,28 +447,215 @@ export default function ProcedureBuilderPage() {
                 />
             ) : null}
 
-            <div className="form-actions" style={{ marginTop: "16px" }}>
-                <button onClick={handleSaveProcedure} disabled={saving}>
-                    {saving ? "Saving..." : "Save Procedure"}
+            <section
+                className="stack"
+                style={{ marginTop: "28px" }}
+            >
+                <div className="page-toolbar">
+                    <h2
+                        className="section-title"
+                        style={{ margin: 0 }}
+                    >
+                        Version Comparison
+                    </h2>
+
+                    <button
+                        type="button"
+                        className="button--secondary"
+                        onClick={handleToggleCompare}
+                    >
+                        {showCompare
+                            ? "Hide"
+                            : "Compare Revisions"}
+                    </button>
+                </div>
+
+                {showCompare && (
+                    <div className="page-card">
+                        {history.length < 2 ? (
+                            <p className="helper-text">
+                                This Test Procedure needs at
+                                least two saved revisions before
+                                versions can be compared.
+                            </p>
+                        ) : (
+                            <>
+                                <div className="form-grid form-grid--two">
+                                    <div className="form-field">
+                                        <label>
+                                            From Revision
+                                        </label>
+
+                                        <select
+                                            value={fromVersion}
+                                            onChange={(e) =>
+                                                setFromVersion(
+                                                    e.target.value
+                                                )
+                                            }
+                                        >
+                                            {history.map((h) => (
+                                                <option
+                                                    key={
+                                                        h.versionNumber
+                                                    }
+                                                    value={
+                                                        h.versionNumber
+                                                    }
+                                                >
+                                                    Revision{" "}
+                                                    {
+                                                        h.versionNumber
+                                                    }
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-field">
+                                        <label>
+                                            To Revision
+                                        </label>
+
+                                        <select
+                                            value={toVersion}
+                                            onChange={(e) =>
+                                                setToVersion(
+                                                    e.target.value
+                                                )
+                                            }
+                                        >
+                                            {history.map((h) => (
+                                                <option
+                                                    key={
+                                                        h.versionNumber
+                                                    }
+                                                    value={
+                                                        h.versionNumber
+                                                    }
+                                                >
+                                                    Revision{" "}
+                                                    {
+                                                        h.versionNumber
+                                                    }
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="form-actions">
+                                    <button
+                                        type="button"
+                                        onClick={handleCompare}
+                                        disabled={comparing}
+                                    >
+                                        {comparing
+                                            ? "Comparing..."
+                                            : "Compare"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {compareError ? (
+                            <p
+                                style={{
+                                    color: "var(--danger)",
+                                }}
+                            >
+                                {compareError}
+                            </p>
+                        ) : null}
+
+                        {comparison && (
+                            <div
+                                className="stack"
+                                style={{
+                                    marginTop: "18px",
+                                }}
+                            >
+                                <p className="helper-text">
+                                    Revision{" "}
+                                    {comparison.fromVersion}
+                                    {" → "}
+                                    {comparison.toVersion}
+                                    {" · "}
+                                    {
+                                        comparison.addedStepCount
+                                    }{" "}
+                                    added,{" "}
+                                    {
+                                        comparison.removedStepCount
+                                    }{" "}
+                                    removed,{" "}
+                                    {
+                                        comparison.changedStepCount
+                                    }{" "}
+                                    changed,{" "}
+                                    {
+                                        comparison.unchangedStepCount
+                                    }{" "}
+                                    unchanged
+                                </p>
+
+                                {comparison.steps.map(
+                                    (step, index) => (
+                                        <StepComparisonCard
+                                            key={
+                                                step.toStep?.id ??
+                                                step.fromStep?.id ??
+                                                index
+                                            }
+                                            step={step}
+                                        />
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </section>
+
+            <div
+                className="form-actions"
+                style={{ marginTop: "16px" }}
+            >
+                <button
+                    onClick={handleSaveProcedure}
+                    disabled={saving}
+                >
+                    {saving
+                        ? "Saving..."
+                        : "Save Procedure"}
                 </button>
             </div>
         </ManagementLayout>
     );
 }
 
-function InsertTestBlockPanel({ procedureId, lruId, blocks, onInserted }) {
+function InsertTestBlockPanel({
+    procedureId,
+    lruId,
+    blocks,
+    onInserted,
+}) {
     const [blockId, setBlockId] = useState("");
     const [interfaceId, setInterfaceId] = useState("");
     const [connectorId, setConnectorId] = useState("");
-    const [signalLibraryId, setSignalLibraryId] = useState("");
+    const [signalLibraryId, setSignalLibraryId] =
+        useState("");
     const [protocolTagId, setProtocolTagId] = useState("");
-    const [faultCategoryId, setFaultCategoryId] = useState("");
+    const [faultCategoryId, setFaultCategoryId] =
+        useState("");
 
     const [interfaces, setInterfaces] = useState([]);
     const [connectors, setConnectors] = useState([]);
-    const [signalLibraries, setSignalLibraries] = useState([]);
+    const [signalLibraries, setSignalLibraries] =
+        useState([]);
     const [protocolTags, setProtocolTags] = useState([]);
-    const [faultTemplates, setFaultTemplates] = useState([]);
+    const [faultTemplates, setFaultTemplates] =
+        useState([]);
 
     const [inserting, setInserting] = useState(false);
     const [error, setError] = useState("");
@@ -277,54 +664,103 @@ function InsertTestBlockPanel({ procedureId, lruId, blocks, onInserted }) {
         if (!lruId) {
             return;
         }
+
         const loadOptions = async () => {
             try {
-                const [ifaceRes, connRes, sigRes, protoRes, faultRes] = await Promise.all([
-                    interfaceService.getInterfacesByLruId(lruId),
-                    connectorService.getConnectorsByLruId(lruId),
-                    signalLibraryService.getSignalLibrariesByLruId(lruId),
-                    protocolTagService.getProtocolTagsByLruId(lruId),
-                    faultTemplateService.getFaultTemplatesByLruId(lruId),
+                const [
+                    ifaceRes,
+                    connRes,
+                    sigRes,
+                    protoRes,
+                    faultRes,
+                ] = await Promise.all([
+                    interfaceService.getInterfacesByLruId(
+                        lruId
+                    ),
+                    connectorService.getConnectorsByLruId(
+                        lruId
+                    ),
+                    signalLibraryService.getSignalLibrariesByLruId(
+                        lruId
+                    ),
+                    protocolTagService.getProtocolTagsByLruId(
+                        lruId
+                    ),
+                    faultTemplateService.getFaultTemplatesByLruId(
+                        lruId
+                    ),
                 ]);
+
                 setInterfaces(ifaceRes.data);
                 setConnectors(connRes.data);
                 setSignalLibraries(sigRes.data);
                 setProtocolTags(protoRes.data);
                 setFaultTemplates(faultRes.data);
             } catch (fetchError) {
-                console.error("Failed to load reference options for Test Block insert:", fetchError);
+                console.error(
+                    "Failed to load reference options for Test Block insert:",
+                    fetchError
+                );
             }
         };
+
         void loadOptions();
     }, [lruId]);
 
     const handleInsert = async () => {
         setError("");
-        if (!blockId || !interfaceId || !connectorId || !signalLibraryId || !protocolTagId || !faultCategoryId) {
-            setError("Choose a Test Block and all five bindings before inserting.");
+
+        if (
+            !blockId ||
+            !interfaceId ||
+            !connectorId ||
+            !signalLibraryId ||
+            !protocolTagId ||
+            !faultCategoryId
+        ) {
+            setError(
+                "Choose a Test Block and all five bindings before inserting."
+            );
             return;
         }
 
         setInserting(true);
+
         try {
-            await testBlockService.insertIntoProcedure(blockId, {
-                testProcedureId: Number(procedureId),
-                interfaceId: Number(interfaceId),
-                connectorId: Number(connectorId),
-                signalLibraryId: Number(signalLibraryId),
-                protocolTagId: Number(protocolTagId),
-                faultCategoryId: Number(faultCategoryId),
-            });
+            await testBlockService.insertIntoProcedure(
+                blockId,
+                {
+                    testProcedureId: Number(procedureId),
+                    interfaceId: Number(interfaceId),
+                    connectorId: Number(connectorId),
+                    signalLibraryId: Number(
+                        signalLibraryId
+                    ),
+                    protocolTagId: Number(protocolTagId),
+                    faultCategoryId: Number(
+                        faultCategoryId
+                    ),
+                }
+            );
+
             setBlockId("");
             setInterfaceId("");
             setConnectorId("");
             setSignalLibraryId("");
             setProtocolTagId("");
             setFaultCategoryId("");
+
             await onInserted();
         } catch (insertError) {
-            console.error("Failed to insert Test Block into procedure:", insertError);
-            const message = insertError?.response?.data?.message || "Could not insert this Test Block.";
+            console.error(
+                "Failed to insert Test Block into procedure:",
+                insertError
+            );
+
+            const message =
+                insertError?.response?.data?.message ||
+                "Could not insert this Test Block.";
+
             setError(message);
         } finally {
             setInserting(false);
@@ -336,73 +772,172 @@ function InsertTestBlockPanel({ procedureId, lruId, blocks, onInserted }) {
     }
 
     return (
-        <section className="form-card" style={{ marginTop: "16px" }}>
+        <section
+            className="form-card"
+            style={{ marginTop: "16px" }}
+        >
             <p className="helper-text">
-                Insert a reusable Test Block from the shared library as a new step in this procedure.
+                Insert a reusable Test Block from the shared
+                library as a new step in this procedure.
             </p>
 
             <div className="form-grid form-grid--two">
                 <div className="form-field">
                     <label>Test Block *</label>
-                    <select value={blockId} onChange={(e) => setBlockId(e.target.value)}>
-                        <option value="">Select a Test Block</option>
+
+                    <select
+                        value={blockId}
+                        onChange={(e) =>
+                            setBlockId(e.target.value)
+                        }
+                    >
+                        <option value="">
+                            Select a Test Block
+                        </option>
+
                         {blocks.map((b) => (
-                            <option key={b.id} value={b.id}>{b.name} (used {b.usageCount}x)</option>
+                            <option
+                                key={b.id}
+                                value={b.id}
+                            >
+                                {b.name} (used{" "}
+                                {b.usageCount}x)
+                            </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Interface *</label>
-                    <select value={interfaceId} onChange={(e) => setInterfaceId(e.target.value)}>
+
+                    <select
+                        value={interfaceId}
+                        onChange={(e) =>
+                            setInterfaceId(e.target.value)
+                        }
+                    >
                         <option value="">Select</option>
+
                         {interfaces.map((i) => (
-                            <option key={i.id} value={i.id}>{i.name}</option>
+                            <option
+                                key={i.id}
+                                value={i.id}
+                            >
+                                {i.name}
+                            </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Connector *</label>
-                    <select value={connectorId} onChange={(e) => setConnectorId(e.target.value)}>
+
+                    <select
+                        value={connectorId}
+                        onChange={(e) =>
+                            setConnectorId(e.target.value)
+                        }
+                    >
                         <option value="">Select</option>
+
                         {connectors.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
+                            <option
+                                key={c.id}
+                                value={c.id}
+                            >
+                                {c.name}
+                            </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Signal Library *</label>
-                    <select value={signalLibraryId} onChange={(e) => setSignalLibraryId(e.target.value)}>
+
+                    <select
+                        value={signalLibraryId}
+                        onChange={(e) =>
+                            setSignalLibraryId(
+                                e.target.value
+                            )
+                        }
+                    >
                         <option value="">Select</option>
+
                         {signalLibraries.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
+                            <option
+                                key={s.id}
+                                value={s.id}
+                            >
+                                {s.name}
+                            </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Protocol Tag *</label>
-                    <select value={protocolTagId} onChange={(e) => setProtocolTagId(e.target.value)}>
+
+                    <select
+                        value={protocolTagId}
+                        onChange={(e) =>
+                            setProtocolTagId(
+                                e.target.value
+                            )
+                        }
+                    >
                         <option value="">Select</option>
+
                         {protocolTags.map((p) => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option
+                                key={p.id}
+                                value={p.id}
+                            >
+                                {p.name}
+                            </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Fault Category *</label>
-                    <select value={faultCategoryId} onChange={(e) => setFaultCategoryId(e.target.value)}>
+
+                    <select
+                        value={faultCategoryId}
+                        onChange={(e) =>
+                            setFaultCategoryId(
+                                e.target.value
+                            )
+                        }
+                    >
                         <option value="">Select</option>
+
                         {faultTemplates.map((f) => (
-                            <option key={f.id} value={f.id}>{f.name}</option>
+                            <option
+                                key={f.id}
+                                value={f.id}
+                            >
+                                {f.name}
+                            </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
+            {error ? (
+                <p style={{ color: "var(--danger)" }}>
+                    {error}
+                </p>
+            ) : null}
 
             <div className="form-actions">
-                <button onClick={handleInsert} disabled={inserting}>
-                    {inserting ? "Inserting..." : "Insert Test Block"}
+                <button
+                    onClick={handleInsert}
+                    disabled={inserting}
+                >
+                    {inserting
+                        ? "Inserting..."
+                        : "Insert Test Block"}
                 </button>
             </div>
         </section>
