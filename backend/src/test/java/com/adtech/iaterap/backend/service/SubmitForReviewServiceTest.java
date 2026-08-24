@@ -2,6 +2,8 @@ package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
 import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
+import com.adtech.iaterap.backend.entity.Lru;
+import com.adtech.iaterap.backend.entity.ProcedureHistory;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.entity.TestStep;
 import com.adtech.iaterap.backend.repository.ConnectorRepository;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +77,13 @@ class SubmitForReviewServiceTest {
         var response = service.submitForReview(1L);
 
         assertThat(response.getApprovalStatus()).isEqualTo("IN_REVIEW");
+        assertThat(response.getVersionNumber()).isEqualTo(2);
         verify(testProcedureRepository).save(procedure);
+        org.mockito.ArgumentCaptor<ProcedureHistory> history =
+                org.mockito.ArgumentCaptor.forClass(ProcedureHistory.class);
+        verify(procedureHistoryRepository, times(1)).save(history.capture());
+        assertThat(history.getValue().getVersionNumber()).isEqualTo(2);
+        assertThat(history.getValue().getApprovalStatus()).isEqualTo("IN_REVIEW");
     }
 
     @Test
@@ -130,6 +139,10 @@ class SubmitForReviewServiceTest {
         withId(procedure, id);
         procedure.setApprovalStatus(approvalStatus);
         procedure.setVersionNumber(1);
+        Lru lru = new Lru();
+        withId(lru, 100L);
+        lru.setName("Test LRU");
+        procedure.setLru(lru);
         return procedure;
     }
 

@@ -165,8 +165,10 @@ public class TestProcedureService {
         ApprovalState nextState = approvalStateMachine.transition(currentState, ApprovalState.IN_REVIEW);
 
         procedure.setApprovalStatus(nextState.name());
+        procedure.setVersionNumber(procedure.getVersionNumber() + 1);
         procedure.setUpdatedAt(java.time.LocalDateTime.now());
         testProcedureRepository.save(procedure);
+        writeRevision(procedure, procedure.getVersionNumber());
 
         return TestProcedureResponse.fromEntity(procedure, steps);
     }
