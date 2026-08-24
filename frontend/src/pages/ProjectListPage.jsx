@@ -50,6 +50,9 @@ export default function ProjectListPage() {
                     >
                         <h2 style={{ marginTop: 0 }}>{project.name}</h2>
                         <p>{project.description || "No description provided."}</p>
+                        <button onClick={() => navigate(`/projects/${project.id}`)}>
+                            Open Project
+                        </button>
                     </section>
                 ))}
             </div>
