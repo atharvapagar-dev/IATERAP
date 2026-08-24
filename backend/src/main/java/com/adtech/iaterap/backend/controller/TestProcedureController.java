@@ -49,6 +49,11 @@ public class TestProcedureController {
         return service.update(id, request);
     }
 
+    @PostMapping("/{id}/submit-for-review")
+    public TestProcedureResponse submitForReview(@PathVariable Long id) {
+        return service.submitForReview(id);
+    }
+
     @GetMapping("/{id}/history")
     public List<ProcedureHistoryResponse> getHistory(@PathVariable Long id) {
         return service.getHistory(id);

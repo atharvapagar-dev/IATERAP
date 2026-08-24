@@ -1,5 +1,6 @@
 package com.adtech.iaterap.backend.service;
 
+import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
 import com.adtech.iaterap.backend.dto.TestStepRequest;
@@ -65,7 +66,8 @@ class TestProcedureServiceTest {
                 signalLibraryRepository,
                 protocolTagRepository,
                 faultTemplateRepository,
-                new ObjectMapper().findAndRegisterModules()
+                new ObjectMapper().findAndRegisterModules(),
+                new ApprovalStateMachine()
         );
 
         lru = withId(new Lru("LRU-1"), 1L);
