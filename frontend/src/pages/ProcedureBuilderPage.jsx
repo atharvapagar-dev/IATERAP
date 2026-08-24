@@ -68,7 +68,11 @@ export default function ProcedureBuilderPage() {
     }, [id, isEditing]);
 
     useEffect(() => {
-        void loadAll();
+        const loadInitialData = async () => {
+            await loadAll();
+        };
+
+        void loadInitialData();
     }, [loadAll]);
 
     const handleAddStep = (payload) => {

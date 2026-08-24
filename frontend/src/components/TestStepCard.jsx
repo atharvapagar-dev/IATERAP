@@ -44,7 +44,7 @@ export default function TestStepCard({
     const [signalLibraries, setSignalLibraries] = useState([]);
     const [protocolTags, setProtocolTags] = useState([]);
     const [faultTemplates, setFaultTemplates] = useState([]);
-    const [loadingOptions, setLoadingOptions] = useState(!readOnly);
+    const [loadedOptionsForLruId, setLoadedOptionsForLruId] = useState(null);
     const [error, setError] = useState("");
 
     const [showBlockPrompt, setShowBlockPrompt] = useState(false);
@@ -56,7 +56,6 @@ export default function TestStepCard({
 
     useEffect(() => {
         if (readOnly || !lruId) {
-            setLoadingOptions(false);
             return;
         }
 
@@ -78,12 +77,16 @@ export default function TestStepCard({
                 console.error("Failed to load Test Step reference options:", fetchError);
                 setError("Unable to load Interface/Connector/Signal/Protocol/Fault options for this LRU.");
             } finally {
-                setLoadingOptions(false);
+                setLoadedOptionsForLruId(String(lruId));
             }
         };
 
-        loadOptions();
+        void loadOptions();
     }, [lruId, readOnly]);
+
+    const loadingOptions = !readOnly
+        && Boolean(lruId)
+        && loadedOptionsForLruId !== String(lruId);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
