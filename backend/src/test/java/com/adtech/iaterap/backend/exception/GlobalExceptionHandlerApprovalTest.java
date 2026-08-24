@@ -5,6 +5,7 @@ import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,5 +36,17 @@ class GlobalExceptionHandlerApprovalTest {
                 .contains("APPROVED")
                 .contains("DRAFT");
         assertThat(response.getBody().getTimestamp()).isNotNull();
+    }
+
+    @Test
+    void malformedRequestBodyMapsTo400WithoutExposingParserDetails() {
+        ResponseEntity<ApiError> response = handler.handleUnreadableRequest(
+                new HttpMessageNotReadableException("Cannot deserialize request")
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getMessage()).isEqualTo("Malformed request body.");
     }
 }
