@@ -34,6 +34,7 @@ export default function ProcedureBuilderPage() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [submittingForReview, setSubmittingForReview] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
@@ -170,6 +171,29 @@ export default function ProcedureBuilderPage() {
         }
     };
 
+    const handleSubmitForReview = async () => {
+        setError("");
+        setSuccessMessage("");
+        setSubmittingForReview(true);
+
+        try {
+            const response = await testProcedureService.submitForReview(id);
+            setMeta({
+                approvalStatus: response.data.approvalStatus,
+                versionNumber: response.data.versionNumber,
+            });
+            setSteps((response.data.steps || []).map((s) => ({ ...s })));
+            setSuccessMessage(`Submitted for review - now at version ${response.data.versionNumber}.`);
+        } catch (submitError) {
+            console.error("Failed to submit Test Procedure for review:", submitError);
+            const message = submitError?.response?.data?.message
+                || "Could not submit this Test Procedure for review. Save the procedure and resolve any validation errors, then try again.";
+            setError(message);
+        } finally {
+            setSubmittingForReview(false);
+        }
+    };
+
     if (loading) {
         return (
             <ManagementLayout title="Procedure Builder" description="Loading...">
@@ -252,9 +276,14 @@ export default function ProcedureBuilderPage() {
             ) : null}
 
             <div className="form-actions" style={{ marginTop: "16px" }}>
-                <button onClick={handleSaveProcedure} disabled={saving}>
+                <button onClick={handleSaveProcedure} disabled={saving || submittingForReview}>
                     {saving ? "Saving..." : "Save Procedure"}
                 </button>
+                {isEditing && meta?.approvalStatus === "DRAFT" ? (
+                    <button onClick={handleSubmitForReview} disabled={saving || submittingForReview}>
+                        {submittingForReview ? "Submitting..." : "Submit for Review"}
+                    </button>
+                ) : null}
             </div>
         </ManagementLayout>
     );
