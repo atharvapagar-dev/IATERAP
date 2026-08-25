@@ -5,7 +5,6 @@ import { connectorService } from "../services/connectorService";
 import { signalLibraryService } from "../services/signalLibraryService";
 import { protocolTagService } from "../services/protocolTagService";
 import { faultTemplateService } from "../services/faultTemplateService";
-import { testBlockService } from "../services/testBlockService";
 
 export default function TestStepCard({
     step,
@@ -21,11 +20,11 @@ export default function TestStepCard({
     const isNew = !step?.id;
 
     const [formState, setFormState] = useState({
-        interfaceId: step?.interfaceId ? String(step.interfaceId) : "",
-        connectorId: step?.connectorId ? String(step.connectorId) : "",
-        signalLibraryId: step?.signalLibraryId ? String(step.signalLibraryId) : "",
-        protocolTagId: step?.protocolTagId ? String(step.protocolTagId) : "",
-        faultCategoryId: step?.faultCategoryId ? String(step.faultCategoryId) : "",
+        interfaceId: step?.interfaceEntity?.id ? String(step.interfaceEntity.id) : "",
+        connectorId: step?.connector?.id ? String(step.connector.id) : "",
+        signalLibraryId: step?.signalLibrary?.id ? String(step.signalLibrary.id) : "",
+        protocolTagId: step?.protocolTag?.id ? String(step.protocolTag.id) : "",
+        faultTemplateId: step?.faultCategory?.id ? String(step.faultCategory.id) : "",
         expectedBehaviour: step?.expectedBehaviour || "",
         expectedRange: step?.expectedRange || "",
         calibrationRequirement: step?.calibrationRequirement || "",
@@ -45,14 +44,8 @@ export default function TestStepCard({
     const [protocolTags, setProtocolTags] = useState([]);
     const [faultTemplates, setFaultTemplates] = useState([]);
     const [loadingOptions, setLoadingOptions] = useState(!readOnly);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-
-    const [showBlockPrompt, setShowBlockPrompt] = useState(false);
-    const [blockName, setBlockName] = useState("");
-    const [blockDescription, setBlockDescription] = useState("");
-    const [blockSaving, setBlockSaving] = useState(false);
-    const [blockError, setBlockError] = useState("");
-    const [blockSuccess, setBlockSuccess] = useState("");
 
     useEffect(() => {
         if (readOnly || !lruId) {
@@ -90,28 +83,17 @@ export default function TestStepCard({
         setFormState((current) => ({ ...current, [name]: value }));
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         setError("");
-
-        if (!formState.expectedBehaviour.trim() || !formState.acceptanceCriteria.trim() || !formState.passFailCriteria.trim()) {
-            setError("Expected Behaviour, Acceptance Criteria and Pass/Fail Criteria are required.");
-            return;
-        }
-
-        if (!formState.interfaceId || !formState.connectorId || !formState.signalLibraryId
-                || !formState.protocolTagId || !formState.faultCategoryId) {
-            setError("Interface, Connector, Signal Library, Protocol Tag and Fault Category are all required - the backend rejects a step missing any of these, so pick a value for each before adding.");
-            return;
-        }
+        setSaving(true);
 
         const payload = {
-            id: step?.id,
-            interfaceId: formState.interfaceId ? Number(formState.interfaceId) : null,
-            connectorId: formState.connectorId ? Number(formState.connectorId) : null,
-            signalLibraryId: formState.signalLibraryId ? Number(formState.signalLibraryId) : null,
-            protocolTagId: formState.protocolTagId ? Number(formState.protocolTagId) : null,
-            faultCategoryId: formState.faultCategoryId ? Number(formState.faultCategoryId) : null,
+            interfaceEntity: formState.interfaceId ? { id: Number(formState.interfaceId) } : null,
+            connector: formState.connectorId ? { id: Number(formState.connectorId) } : null,
+            signalLibrary: formState.signalLibraryId ? { id: Number(formState.signalLibraryId) } : null,
+            protocolTag: formState.protocolTagId ? { id: Number(formState.protocolTagId) } : null,
+            faultCategory: formState.faultTemplateId ? { id: Number(formState.faultTemplateId) } : null,
             expectedBehaviour: formState.expectedBehaviour.trim(),
             expectedRange: formState.expectedRange.trim(),
             calibrationRequirement: formState.calibrationRequirement.trim(),
@@ -125,43 +107,21 @@ export default function TestStepCard({
             engineerRemarks: formState.engineerRemarks.trim(),
         };
 
-        onSave(payload);
-
-        if (isNew) {
-            setFormState((current) => ({
-                ...current,
-                expectedBehaviour: "",
-                acceptanceCriteria: "",
-                passFailCriteria: "",
-            }));
-        }
-    };
-
-    const handlePromoteToBlock = async (event) => {
-        event.preventDefault();
-        setBlockError("");
-        setBlockSuccess("");
-
-        if (!blockName.trim()) {
-            setBlockError("Give the Test Block a name.");
-            return;
-        }
-
-        setBlockSaving(true);
         try {
-            await testBlockService.createFromStep(step.id, {
-                name: blockName.trim(),
-                description: blockDescription.trim(),
-            });
-            setBlockSuccess(`Saved as Test Block "${blockName.trim()}".`);
-            setBlockName("");
-            setBlockDescription("");
-        } catch (promoteError) {
-            console.error("Failed to promote Test Step to a Test Block:", promoteError);
-            const message = promoteError?.response?.data?.message || "Could not save this step as a Test Block.";
-            setBlockError(message);
+            await onSave(payload);
+            if (isNew) {
+                setFormState((current) => ({
+                    ...current,
+                    expectedBehaviour: "",
+                    acceptanceCriteria: "",
+                    passFailCriteria: "",
+                }));
+            }
+        } catch (saveError) {
+            console.error("Failed to save Test Step:", saveError);
+            setError("Could not save this Test Step. Please review the form and try again.");
         } finally {
-            setBlockSaving(false);
+            setSaving(false);
         }
     };
 
@@ -240,7 +200,7 @@ export default function TestStepCard({
 
                 <div className="form-field">
                     <label>Fault Category</label>
-                    <select name="faultCategoryId" value={formState.faultCategoryId} onChange={handleChange}>
+                    <select name="faultTemplateId" value={formState.faultTemplateId} onChange={handleChange}>
                         <option value="">None</option>
                         {faultTemplates.map((f) => (
                             <option key={f.id} value={f.id}>{f.name}</option>
@@ -299,39 +259,10 @@ export default function TestStepCard({
             {error ? <p style={{ color: "var(--danger)", marginTop: "12px" }}>{error}</p> : null}
 
             <div className="form-actions">
-                <button type="submit">
-                    {isNew ? "Add Step" : "Update Step"}
+                <button type="submit" disabled={saving}>
+                    {saving ? "Saving..." : isNew ? "Add Step" : "Save Step"}
                 </button>
             </div>
-
-            {!isNew ? (
-                <div style={{ marginTop: "16px", borderTop: "1px solid var(--border, #333)", paddingTop: "12px" }}>
-                    {!showBlockPrompt ? (
-                        <button type="button" onClick={() => setShowBlockPrompt(true)}>
-                            Save as reusable Test Block
-                        </button>
-                    ) : (
-                        <div className="form-grid form-grid--two">
-                            <div className="form-field">
-                                <label>Test Block Name *</label>
-                                <input type="text" value={blockName} onChange={(e) => setBlockName(e.target.value)} />
-                            </div>
-                            <div className="form-field">
-                                <label>Description</label>
-                                <input type="text" value={blockDescription} onChange={(e) => setBlockDescription(e.target.value)} />
-                            </div>
-                            <div className="table-actions">
-                                <button type="button" onClick={handlePromoteToBlock} disabled={blockSaving}>
-                                    {blockSaving ? "Saving..." : "Save Block"}
-                                </button>
-                                <button type="button" onClick={() => setShowBlockPrompt(false)}>Cancel</button>
-                            </div>
-                        </div>
-                    )}
-                    {blockError ? <p style={{ color: "var(--danger)" }}>{blockError}</p> : null}
-                    {blockSuccess ? <p className="helper-text">{blockSuccess}</p> : null}
-                </div>
-            ) : null}
         </form>
     );
 }

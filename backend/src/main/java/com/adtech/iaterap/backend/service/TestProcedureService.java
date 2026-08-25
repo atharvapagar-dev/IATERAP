@@ -1,21 +1,30 @@
 package com.adtech.iaterap.backend.service;
 
+import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
 import com.adtech.iaterap.backend.dto.TestStepRequest;
+import com.adtech.iaterap.backend.dto.TestStepResponse;
 import com.adtech.iaterap.backend.entity.*;
 import com.adtech.iaterap.backend.repository.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -26,9 +35,17 @@ import java.util.stream.Collectors;
  * {@code procedure_history} write (PART AD): the procedure/steps update
  * and the revision insert happen in the same {@code @Transactional}
  * boundary, so a failure never leaves a partially-created revision.</p>
+ *
+ * <p>{@link #rollbackToRevision(Long, Integer)} (AI-187 / T7-B3) is a third
+ * content-changing write alongside {@link #save} and {@link #update}: it
+ * replays a historical {@link ProcedureHistory} snapshot back onto the live
+ * procedure and, in the same transaction, writes yet another brand new
+ * revision -- it never edits or removes any existing revision.</p>
  */
 @Service
 public class TestProcedureService {
+
+    private static final Logger log = LoggerFactory.getLogger(TestProcedureService.class);
 
     private final TestProcedureRepository testProcedureRepository;
     private final TestStepRepository testStepRepository;
@@ -40,6 +57,7 @@ public class TestProcedureService {
     private final ProtocolTagRepository protocolTagRepository;
     private final FaultTemplateRepository faultTemplateRepository;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
     public TestProcedureService(
             TestProcedureRepository testProcedureRepository,
@@ -51,7 +69,8 @@ public class TestProcedureService {
             SignalLibraryRepository signalLibraryRepository,
             ProtocolTagRepository protocolTagRepository,
             FaultTemplateRepository faultTemplateRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AuditService auditService
     ) {
         this.testProcedureRepository = testProcedureRepository;
         this.testStepRepository = testStepRepository;
@@ -63,6 +82,7 @@ public class TestProcedureService {
         this.protocolTagRepository = protocolTagRepository;
         this.faultTemplateRepository = faultTemplateRepository;
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
     }
 
     // ---------- reads ----------
@@ -135,6 +155,220 @@ public class TestProcedureService {
         }
 
         return TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+    }
+
+    // ---------- rollback (AI-187 / T7-B3) ----------
+
+    /**
+     * Rolls the procedure back to the recorded content of a previous
+     * revision.
+     *
+     * <p>{@code sourceRevision} is treated strictly as read-only input --
+     * this method never calls a setter on it and never saves it. The
+     * source revision's name/description/LRU/Test Steps are replayed onto
+     * the live procedure (the same replace-in-place mechanism {@link #update}
+     * uses for every other content-changing save) and, in the same
+     * {@code @Transactional} boundary, a brand new {@code procedure_history}
+     * row is appended with the next version number. Every existing
+     * revision -- including the one rolled back to -- is left completely
+     * untouched; rollback only ever appends a new revision, matching
+     * Sec 4 / Sec 6 of the T7-B3 rollback requirements.</p>
+     *
+     * <p>Unlike {@link #update}, this method deliberately does NOT run the
+     * "no-op resave" suppression check: a rollback is an explicit,
+     * intentional action targeting a specific historical revision and must
+     * always produce a new, auditable revision (Sec 6 / Sec 15 "Version
+     * numbering" requirement), even in the edge case where the target
+     * revision's content happens to already match the procedure's current
+     * live content.</p>
+     *
+     * <p>approvalStatus is intentionally left untouched, exactly as
+     * {@link #update} already leaves it untouched on every other
+     * content-changing save -- rollback does not invent a new approval
+     * transition; the resulting revision carries forward whatever
+     * approval state the live procedure already has and remains subject to
+     * the existing approval workflow.</p>
+     *
+     * @param procedureId          the procedure to roll back
+     * @param sourceVersionNumber  the revision number to roll back to
+     * @return the live procedure state after rollback, whose
+     *         {@code versionNumber} is the newly created revision
+     */
+    @Transactional
+    public TestProcedureResponse rollbackToRevision(Long procedureId, Integer sourceVersionNumber) {
+        if (sourceVersionNumber == null || sourceVersionNumber < 1) {
+            throw new IllegalArgumentException("sourceVersionNumber must be a positive revision number.");
+        }
+
+        TestProcedure procedure = requireProcedure(procedureId);
+
+        ProcedureHistory sourceRevision = procedureHistoryRepository
+                .findByTestProcedureIdAndVersionNumber(procedureId, sourceVersionNumber)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Revision " + sourceVersionNumber + " not found for procedure " + procedureId));
+
+        Lru lru = lruRepository.findById(sourceRevision.getLruId())
+                .orElseThrow(() -> new NoSuchElementException("LRU not found: " + sourceRevision.getLruId()));
+
+        procedure.setLru(lru);
+        procedure.setName(sourceRevision.getName());
+        procedure.setDescription(sourceRevision.getDescription());
+        procedure.setUpdatedAt(java.time.LocalDateTime.now());
+
+        restoreSteps(procedure, deserializeSnapshotSteps(sourceRevision));
+        testProcedureRepository.save(procedure);
+
+        int newVersion = procedure.getVersionNumber() + 1;
+        procedure.setVersionNumber(newVersion);
+        testProcedureRepository.save(procedure);
+
+        writeRevision(procedure, newVersion);
+
+        TestProcedureResponse response = TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+
+        recordRollbackAudit(procedure, sourceRevision, response);
+
+        return response;
+    }
+
+    /**
+     * Rebuilds the live TestStep rows from a historical snapshot.
+     *
+     * <p>Deliberately a separate method from {@link #replaceSteps}, not a
+     * reuse of it, because rollback has different semantics for a snapshot
+     * step id that no longer exists live: {@link #replaceSteps} treats a
+     * missing id as a client error (an ordinary Procedure Builder edit
+     * should never reference a step id that isn't currently live) and
+     * throws; rollback must instead recreate that step, because the
+     * snapshot is allowed to describe steps a later edit has since
+     * deleted. Where a snapshot step's id IS still live, it is reused
+     * in place (not recreated), so Version Comparison (AI-182 /
+     * {@link VersionComparisonService}) continues to match that step by id
+     * across revisions and correctly reports it as unchanged rather than
+     * as a spurious removed/added pair.</p>
+     */
+    private void restoreSteps(TestProcedure procedure, List<TestStepResponse> snapshotSteps) {
+        List<TestStep> existing = orderedSteps(procedure);
+        Map<Long, TestStep> existingById = existing.stream()
+                .collect(Collectors.toMap(TestStep::getId, Function.identity()));
+
+        Set<Long> restoredIds = new HashSet<>();
+        int order = 1;
+        for (TestStepResponse snapshotStep : snapshotSteps) {
+            TestStep step = (snapshotStep.getId() != null && existingById.containsKey(snapshotStep.getId()))
+                    ? existingById.get(snapshotStep.getId())
+                    : new TestStep();
+
+            step.setTestProcedure(procedure);
+            step.setInterfaceEntity(interfaceRepository.findById(snapshotStep.getInterfaceId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Interface not found: " + snapshotStep.getInterfaceId())));
+            step.setConnector(connectorRepository.findById(snapshotStep.getConnectorId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Connector not found: " + snapshotStep.getConnectorId())));
+            step.setSignalLibrary(signalLibraryRepository.findById(snapshotStep.getSignalLibraryId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Signal library not found: " + snapshotStep.getSignalLibraryId())));
+            step.setProtocolTag(protocolTagRepository.findById(snapshotStep.getProtocolTagId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Protocol tag not found: " + snapshotStep.getProtocolTagId())));
+            step.setFaultCategory(faultTemplateRepository.findById(snapshotStep.getFaultCategoryId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Fault category not found: " + snapshotStep.getFaultCategoryId())));
+
+            step.setExpectedBehaviour(snapshotStep.getExpectedBehaviour());
+            step.setExpectedRange(snapshotStep.getExpectedRange());
+            step.setCalibrationRequirement(snapshotStep.getCalibrationRequirement());
+            step.setSafetyNotes(snapshotStep.getSafetyNotes());
+            step.setAcceptanceCriteria(snapshotStep.getAcceptanceCriteria());
+            step.setPreconditions(snapshotStep.getPreconditions());
+            step.setDependencies(snapshotStep.getDependencies());
+            step.setExecutionOrder(order++);
+            step.setPostConditions(snapshotStep.getPostConditions());
+            step.setPassFailCriteria(snapshotStep.getPassFailCriteria());
+            step.setExpectedObservation(snapshotStep.getExpectedObservation());
+            step.setEngineerRemarks(snapshotStep.getEngineerRemarks());
+            step.setUpdatedAt(java.time.LocalDateTime.now());
+
+            TestStep saved = testStepRepository.save(step);
+            restoredIds.add(saved.getId());
+        }
+
+        for (TestStep step : existing) {
+            if (!restoredIds.contains(step.getId())) {
+                testStepRepository.delete(step);
+            }
+        }
+    }
+
+    /**
+     * Mirrors {@link VersionComparisonService}'s own snapshot parsing: the
+     * response DTO exposes no setters, so the snapshot is parsed as a
+     * generic JSON tree and rebuilt via {@link TestStepResponse#fromSnapshot}
+     * rather than through Jackson bean binding. Defensively re-sorted by
+     * the snapshot's own recorded {@code executionOrder} so restoration
+     * order is correct even if the stored array order were ever not
+     * already ascending.
+     */
+    private List<TestStepResponse> deserializeSnapshotSteps(ProcedureHistory revision) {
+        try {
+            JsonNode root = objectMapper.readTree(revision.getStepsSnapshot());
+            List<TestStepResponse> steps = new ArrayList<>();
+            for (JsonNode stepNode : root) {
+                steps.add(TestStepResponse.fromSnapshot(stepNode));
+            }
+            steps.sort(Comparator.comparing(
+                    TestStepResponse::getExecutionOrder,
+                    Comparator.nullsLast(Comparator.naturalOrder())));
+            return steps;
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to deserialize TestStep snapshot for procedure " + revision.getTestProcedureId()
+                            + " revision " + revision.getVersionNumber(), e);
+        }
+    }
+
+    /**
+     * Writes the ROLLBACK audit entry directly (rather than relying on
+     * {@link com.adtech.iaterap.backend.aop.AuditAspect}'s generic
+     * save/update/delete pointcut, which this method's name does not
+     * match) so the audit action is recorded precisely as {@code ROLLBACK}
+     * rather than a generic {@code UPDATE}, per Sec 7 of the rollback
+     * requirements. Mirrors {@code AuditAspect}'s own failure handling:
+     * an audit-write failure is logged and swallowed, never allowed to
+     * fail or roll back an already-successful rollback.
+     */
+    private void recordRollbackAudit(
+            TestProcedure procedure,
+            ProcedureHistory sourceRevision,
+            TestProcedureResponse result
+    ) {
+        try {
+            auditService.record(
+                    resolveActor(),
+                    "ROLLBACK",
+                    "TestProcedure",
+                    String.valueOf(procedure.getId()),
+                    safeSerialize(ProcedureHistoryResponse.fromEntity(sourceRevision)),
+                    safeSerialize(result),
+                    "Rolled back procedure " + procedure.getId() + " to revision "
+                            + sourceRevision.getVersionNumber() + ", creating revision "
+                            + result.getVersionNumber()
+            );
+        } catch (Exception auditException) {
+            log.warn(
+                    "Failed to persist ROLLBACK audit log for procedure {}: {}",
+                    procedure.getId(), auditException.getMessage()
+            );
+        }
+    }
+
+    private String safeSerialize(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return String.valueOf(obj);
+        }
     }
 
     // ---------- revision retrieval ----------
@@ -230,7 +464,6 @@ public class TestProcedureService {
         history.setName(procedure.getName());
         history.setDescription(procedure.getDescription());
         history.setLruId(procedure.getLru().getId());
-        history.setLruName(procedure.getLru().getName());
         history.setApprovalStatus(procedure.getApprovalStatus());
         history.setStepsSnapshot(serializeSteps(orderedSteps(procedure)));
         history.setCreatedBy(resolveActor());
@@ -251,7 +484,6 @@ public class TestProcedureService {
         return java.util.Objects.equals(latest.getName(), procedure.getName())
                 && java.util.Objects.equals(latest.getDescription(), procedure.getDescription())
                 && java.util.Objects.equals(latest.getLruId(), procedure.getLru().getId())
-                && java.util.Objects.equals(latest.getLruName(), procedure.getLru().getName())
                 && java.util.Objects.equals(latest.getApprovalStatus(), procedure.getApprovalStatus())
                 && java.util.Objects.equals(latest.getStepsSnapshot(), candidateStepsSnapshot);
     }

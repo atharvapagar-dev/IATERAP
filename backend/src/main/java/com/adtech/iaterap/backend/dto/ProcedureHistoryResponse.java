@@ -18,7 +18,6 @@ public class ProcedureHistoryResponse {
     private String name;
     private String description;
     private Long lruId;
-    private String lruName;
     private String approvalStatus;
     private String stepsSnapshot;
     private String createdBy;
@@ -32,7 +31,6 @@ public class ProcedureHistoryResponse {
         r.name = h.getName();
         r.description = h.getDescription();
         r.lruId = h.getLruId();
-        r.lruName = h.getLruName();
         r.approvalStatus = h.getApprovalStatus();
         r.stepsSnapshot = h.getStepsSnapshot();
         r.createdBy = h.getCreatedBy();
@@ -46,7 +44,6 @@ public class ProcedureHistoryResponse {
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Long getLruId() { return lruId; }
-    public String getLruName() { return lruName; }
     public String getApprovalStatus() { return approvalStatus; }
     public String getStepsSnapshot() { return stepsSnapshot; }
     public String getCreatedBy() { return createdBy; }

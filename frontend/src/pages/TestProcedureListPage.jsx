@@ -3,12 +3,10 @@ import { useNavigate } from "react-router-dom";
 
 import ManagementLayout from "../components/ManagementLayout";
 import { testProcedureService } from "../services/testProcedureService";
-import { getLrus } from "../services/lruService";
 
 export default function TestProcedureListPage() {
     const navigate = useNavigate();
     const [procedures, setProcedures] = useState([]);
-    const [lrus, setLrus] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -16,12 +14,8 @@ export default function TestProcedureListPage() {
         const loadProcedures = async () => {
             try {
                 setError("");
-                const [procRes, lruRes] = await Promise.all([
-                    testProcedureService.getAllProcedures(),
-                    getLrus(),
-                ]);
-                setProcedures(procRes.data);
-                setLrus(lruRes.data);
+                const response = await testProcedureService.getAllProcedures();
+                setProcedures(response.data);
             } catch (fetchError) {
                 console.error("Failed to fetch test procedures:", fetchError);
                 setError("Unable to load test procedures right now.");
@@ -32,8 +26,6 @@ export default function TestProcedureListPage() {
 
         void loadProcedures();
     }, []);
-
-    const lruName = (lruId) => lrus.find((l) => l.id === lruId)?.name || "-";
 
     return (
         <ManagementLayout
@@ -75,7 +67,7 @@ export default function TestProcedureListPage() {
                                 <tr key={item.id}>
                                     <td>{item.id}</td>
                                     <td><strong>{item.name}</strong></td>
-                                    <td>{lruName(item.lruId)}</td>
+                                    <td>{item.lru?.name || "-"}</td>
                                     <td>{item.approvalStatus}</td>
                                     <td>
                                         <div className="table-actions">

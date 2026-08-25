@@ -44,9 +44,6 @@ public class ProcedureHistory {
     @Column(name = "lru_id", nullable = false)
     private Long lruId;
 
-    @Column(name = "lru_name")
-    private String lruName;
-
     @NotBlank
     @Column(name = "approval_status", nullable = false)
     private String approvalStatus;
@@ -74,8 +71,6 @@ public class ProcedureHistory {
     public void setDescription(String v) { this.description = v; }
     public Long getLruId() { return lruId; }
     public void setLruId(Long v) { this.lruId = v; }
-    public String getLruName() { return lruName; }
-    public void setLruName(String v) { this.lruName = v; }
     public String getApprovalStatus() { return approvalStatus; }
     public void setApprovalStatus(String v) { this.approvalStatus = v; }
     public String getStepsSnapshot() { return stepsSnapshot; }

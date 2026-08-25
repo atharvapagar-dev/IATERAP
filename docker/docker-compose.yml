@@ -26,7 +26,7 @@ services:
 
   backend:
     build:
-      context: ../backend
+      context: ./backend
     container_name: iaterap-backend
     depends_on:
       postgres:
@@ -40,7 +40,7 @@ services:
 
   ai-service:
     build:
-      context: ../ai-service
+      context: ./ai-service
     container_name: iaterap-ai-service
     ports:
       - "8000:8000"

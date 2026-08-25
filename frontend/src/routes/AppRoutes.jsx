@@ -38,6 +38,7 @@ import FmeaBranchMappingEditPage from "../pages/FmeaBranchMappingEditPage";
 import AuditLogListPage from "../pages/AuditLogListPage";
 
 import TestProcedureListPage from "../pages/TestProcedureListPage";
+import TestProcedureCreatePage from "../pages/TestProcedureCreatePage";
 import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -319,7 +320,7 @@ function AppRoutes() {
                 path="/procedures/create"
                 element={
                     <ProtectedRoute>
-                        <ProcedureBuilderPage />
+                        <TestProcedureCreatePage />
                     </ProtectedRoute>
                 }
             />

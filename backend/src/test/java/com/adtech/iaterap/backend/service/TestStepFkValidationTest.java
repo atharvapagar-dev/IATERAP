@@ -48,10 +48,8 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepCanBePersistedWithValidInterfaceAndProcedure() {
+        Interface iface = interfaceRepository.findAll().get(0);
         Lru lru = lruRepository.findAll().get(0);
-        Interface iface = interfaceRepository.findAll().stream()
-                .filter(i -> i.getLru().getId().equals(lru.getId()))
-                .findFirst().orElseThrow();
 
         TestProcedure procedure = new TestProcedure();
         procedure.setLru(lru);
@@ -79,8 +77,8 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepCanReferenceConnector() {
+        Connector connector = connectorRepository.findAll().get(0);
         Lru lru = lruRepository.findAll().get(0);
-        Connector connector = connectorRepository.findByLruId(lru.getId()).get(0);
 
         TestProcedure procedure = new TestProcedure();
         procedure.setLru(lru);
@@ -106,8 +104,8 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepCanReferenceSignalLibrary() {
+        SignalLibrary signal = signalLibraryRepository.findAll().get(0);
         Lru lru = lruRepository.findAll().get(0);
-        SignalLibrary signal = signalLibraryRepository.findByLruId(lru.getId()).get(0);
 
         TestProcedure procedure = new TestProcedure();
         procedure.setLru(lru);
@@ -133,8 +131,8 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepCanReferenceProtocolTag() {
+        ProtocolTag tag = protocolTagRepository.findAll().get(0);
         Lru lru = lruRepository.findAll().get(0);
-        ProtocolTag tag = protocolTagRepository.findByLruId(lru.getId()).get(0);
 
         TestProcedure procedure = new TestProcedure();
         procedure.setLru(lru);
@@ -160,8 +158,8 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepCanReferenceFaultTemplate() {
+        FaultTemplate fault = faultTemplateRepository.findAll().get(0);
         Lru lru = lruRepository.findAll().get(0);
-        FaultTemplate fault = faultTemplateRepository.findByLruId(lru.getId()).get(0);
 
         TestProcedure procedure = new TestProcedure();
         procedure.setLru(lru);
@@ -230,10 +228,7 @@ class TestStepFkValidationTest {
 
     @Test
     void testStepRejectsNonExistentTestProcedureReference() {
-        Lru lru = lruRepository.findAll().get(0);
-        Interface iface = interfaceRepository.findAll().stream()
-                .filter(i -> i.getLru().getId().equals(lru.getId()))
-                .findFirst().orElseThrow();
+        Interface iface = interfaceRepository.findAll().get(0);
         TestProcedure bogusProcedure = testProcedureRepository.getReferenceById(999999L);
 
         TestStep step = new TestStep();

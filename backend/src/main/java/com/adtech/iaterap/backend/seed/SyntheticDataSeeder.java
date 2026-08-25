@@ -44,10 +44,6 @@ public class SyntheticDataSeeder implements CommandLineRunner {
     private final AircraftRepository aircraftRepository;
     private final SubsystemRepository subsystemRepository;
     private final TestBlockRepository testBlockRepository;
-    private final TestStepRepository testStepRepository;
-    private final TestProcedureRepository testProcedureRepository;
-    private final ProcedureHistoryRepository procedureHistoryRepository;
-    private final ReviewerCommentRepository reviewerCommentRepository;
 
     public SyntheticDataSeeder(
             LruRepository lruRepository,
@@ -61,11 +57,7 @@ public class SyntheticDataSeeder implements CommandLineRunner {
             ProjectRepository projectRepository,
             AircraftRepository aircraftRepository,
             SubsystemRepository subsystemRepository,
-            TestBlockRepository testBlockRepository,
-            TestStepRepository testStepRepository,
-            TestProcedureRepository testProcedureRepository,
-            ProcedureHistoryRepository procedureHistoryRepository,
-            ReviewerCommentRepository reviewerCommentRepository
+            TestBlockRepository testBlockRepository
     ) {
         this.lruRepository = lruRepository;
         this.interfaceRepository = interfaceRepository;
@@ -79,10 +71,6 @@ public class SyntheticDataSeeder implements CommandLineRunner {
         this.aircraftRepository = aircraftRepository;
         this.subsystemRepository = subsystemRepository;
         this.testBlockRepository = testBlockRepository;
-        this.testStepRepository = testStepRepository;
-        this.testProcedureRepository = testProcedureRepository;
-        this.procedureHistoryRepository = procedureHistoryRepository;
-        this.reviewerCommentRepository = reviewerCommentRepository;
     }
 
     @Override
@@ -134,19 +122,6 @@ public class SyntheticDataSeeder implements CommandLineRunner {
      * across every table in the domain model it now covers.
      */
     private void reset() {
-        // AI-179 fix: test_steps/test_procedures/procedure_history/
-        // reviewer_comments were added in V10-V16, after this method was
-        // originally written, and were never added here. Any real
-        // TestStep/TestProcedure created through the running app (not
-        // seeded) then permanently blocked every subsequent reset(),
-        // since interface/connector/signal_libraries/protocol_tags/
-        // fault_templates/test_procedures are all still FK-referenced by
-        // it. Deleted first, in FK-dependency order, below.
-        reviewerCommentRepository.deleteAllInBatch();
-        procedureHistoryRepository.deleteAllInBatch();
-        testStepRepository.deleteAllInBatch();
-        testProcedureRepository.deleteAllInBatch();
-
         fmeaBranchMappingRepository.deleteAllInBatch();
         signalRangeRepository.deleteAllInBatch();
         signalLibraryRepository.deleteAllInBatch();
