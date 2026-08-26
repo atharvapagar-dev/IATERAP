@@ -44,6 +44,10 @@ public class SyntheticDataSeeder implements CommandLineRunner {
     private final AircraftRepository aircraftRepository;
     private final SubsystemRepository subsystemRepository;
     private final TestBlockRepository testBlockRepository;
+    private final TestStepRepository testStepRepository;
+    private final TestProcedureRepository testProcedureRepository;
+    private final ProcedureHistoryRepository procedureHistoryRepository;
+    private final ReviewerCommentRepository reviewerCommentRepository;
 
     public SyntheticDataSeeder(
             LruRepository lruRepository,
@@ -57,7 +61,11 @@ public class SyntheticDataSeeder implements CommandLineRunner {
             ProjectRepository projectRepository,
             AircraftRepository aircraftRepository,
             SubsystemRepository subsystemRepository,
-            TestBlockRepository testBlockRepository
+            TestBlockRepository testBlockRepository,
+            TestStepRepository testStepRepository,
+            TestProcedureRepository testProcedureRepository,
+            ProcedureHistoryRepository procedureHistoryRepository,
+            ReviewerCommentRepository reviewerCommentRepository
     ) {
         this.lruRepository = lruRepository;
         this.interfaceRepository = interfaceRepository;
@@ -71,6 +79,10 @@ public class SyntheticDataSeeder implements CommandLineRunner {
         this.aircraftRepository = aircraftRepository;
         this.subsystemRepository = subsystemRepository;
         this.testBlockRepository = testBlockRepository;
+        this.testStepRepository = testStepRepository;
+        this.testProcedureRepository = testProcedureRepository;
+        this.procedureHistoryRepository = procedureHistoryRepository;
+        this.reviewerCommentRepository = reviewerCommentRepository;
     }
 
     @Override
@@ -122,6 +134,11 @@ public class SyntheticDataSeeder implements CommandLineRunner {
      * across every table in the domain model it now covers.
      */
     private void reset() {
+        reviewerCommentRepository.deleteAllInBatch();
+        procedureHistoryRepository.deleteAllInBatch();
+        testStepRepository.deleteAllInBatch();
+        testProcedureRepository.deleteAllInBatch();
+
         fmeaBranchMappingRepository.deleteAllInBatch();
         signalRangeRepository.deleteAllInBatch();
         signalLibraryRepository.deleteAllInBatch();

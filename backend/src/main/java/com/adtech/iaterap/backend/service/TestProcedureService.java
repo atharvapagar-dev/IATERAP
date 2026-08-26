@@ -62,6 +62,7 @@ public class TestProcedureService {
     private final AuditService auditService;
     private ApprovalStateMachine approvalStateMachine;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public TestProcedureService(
             TestProcedureRepository testProcedureRepository,
             TestStepRepository testStepRepository,
@@ -89,7 +90,6 @@ public class TestProcedureService {
         this.approvalStateMachine = new ApprovalStateMachine();
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
     public TestProcedureService(
             TestProcedureRepository testProcedureRepository,
             TestStepRepository testStepRepository,

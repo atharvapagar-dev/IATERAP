@@ -52,10 +52,10 @@ class TwoRevisionRetrievabilityTest {
                 .filter(i -> i.getLru().getId().equals(lru.getId()))
                 .findFirst()
                 .orElseThrow();
-        Connector connector = connectorRepository.findAll().get(0);
-        SignalLibrary signal = signalLibraryRepository.findAll().get(0);
-        ProtocolTag protocolTag = protocolTagRepository.findAll().get(0);
-        FaultTemplate fault = faultTemplateRepository.findAll().get(0);
+        Connector connector = connectorRepository.findByLruId(lru.getId()).get(0);
+        SignalLibrary signal = signalLibraryRepository.findByLruId(lru.getId()).get(0);
+        ProtocolTag protocolTag = protocolTagRepository.findByLruId(lru.getId()).get(0);
+        FaultTemplate fault = faultTemplateRepository.findByLruId(lru.getId()).get(0);
 
         TestStepRequest step = new TestStepRequest();
         step.setInterfaceId(iface.getId());
