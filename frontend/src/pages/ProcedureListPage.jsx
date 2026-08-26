@@ -38,7 +38,7 @@ export default function ProcedureListPage() {
                     Builder, or start a new one.
                 </p>
 
-                <button onClick={() => navigate("/procedures/new")}>
+                <button onClick={() => navigate("/procedures/create")}>
                     New Procedure
                 </button>
             </div>
@@ -69,7 +69,7 @@ export default function ProcedureListPage() {
                                     <td>{p.versionNumber}</td>
                                     <td>{p.steps?.length ?? 0}</td>
                                     <td>
-                                        <button onClick={() => navigate(`/procedures/${p.id}`)}>
+                                        <button onClick={() => navigate(`/procedures/${p.id}/builder`)}>
                                             Open in Builder
                                         </button>
                                     </td>

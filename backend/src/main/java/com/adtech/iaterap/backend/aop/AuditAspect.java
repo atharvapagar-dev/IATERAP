@@ -50,7 +50,8 @@ public class AuditAspect {
     @Around(
             "execution(public * com.adtech.iaterap.backend.service.*Service.save(..)) || "
                     + "execution(public * com.adtech.iaterap.backend.service.*Service.update(..)) || "
-                    + "execution(public * com.adtech.iaterap.backend.service.*Service.delete(..))"
+                    + "execution(public * com.adtech.iaterap.backend.service.*Service.delete(..)) || "
+                    + "execution(public * com.adtech.iaterap.backend.service.TestProcedureService.submitForReview(..))"
     )
     public Object audit(ProceedingJoinPoint joinPoint) throws Throwable {
         String targetClassName = joinPoint.getTarget().getClass().getSimpleName();
@@ -120,6 +121,9 @@ public class AuditAspect {
             return ACTION_CREATE;
         }
         if (methodName.startsWith("update")) {
+            return ACTION_UPDATE;
+        }
+        if ("submitForReview".equals(methodName)) {
             return ACTION_UPDATE;
         }
         if (methodName.startsWith("delete")) {

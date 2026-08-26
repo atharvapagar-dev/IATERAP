@@ -5,6 +5,7 @@ import HealthCheckPage from "../pages/HealthCheckPage";
 import LoginPage from "../pages/LoginPage";
 import ProjectListPage from "../pages/ProjectListPage";
 import ProjectCreatePage from "../pages/ProjectCreatePage";
+import ProjectDetailPage from "../pages/ProjectDetailPage";
 
 import AircraftListPage from "../pages/AircraftListPage";
 import AircraftCreatePage from "../pages/AircraftCreatePage";
@@ -86,6 +87,15 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ProjectCreatePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/projects/:id"
+                element={
+                    <ProtectedRoute>
+                        <ProjectDetailPage />
                     </ProtectedRoute>
                 }
             />
