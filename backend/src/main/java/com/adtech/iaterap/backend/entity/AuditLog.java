@@ -20,11 +20,9 @@ public class AuditLog {
 
     private String entityId;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String beforeState;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String afterState;
 
