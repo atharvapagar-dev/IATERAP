@@ -1,106 +1,126 @@
 {
   "info": {
-    "name": "IATERAP Procedure Builder",
+    "name": "IATERAP Procedure Authoring and Submit Regression",
+    "description": "AI-190 / T8-A3 regression collection for the authenticated author -> save -> submit-for-review flow.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080/api" },
-    { "key": "procedureId", "value": "1" },
-    { "key": "stepId", "value": "1" },
-    { "key": "lruId", "value": "1" }
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin123" },
+    { "key": "accessToken", "value": "" },
+    { "key": "lruId", "value": "" },
+    { "key": "interfaceId", "value": "" },
+    { "key": "connectorId", "value": "" },
+    { "key": "signalLibraryId", "value": "" },
+    { "key": "protocolTagId", "value": "" },
+    { "key": "faultCategoryId", "value": "" },
+    { "key": "procedureId", "value": "" },
+    { "key": "createdVersion", "value": "" }
   ],
   "item": [
     {
-      "name": "List Test Procedures",
-      "request": { "method": "GET", "url": "{{baseUrl}}/procedures" }
-    },
-    {
-      "name": "Create Test Procedure",
+      "name": "1. Login",
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/procedures",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"lru\": { \"id\": {{lruId}} },\n  \"name\": \"Postman Test Procedure\",\n  \"description\": \"Created via Postman collection\"\n}"
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}" },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+        "pm.collectionVariables.set('accessToken', body.accessToken);"
+      ] } }]
+    },
+    {
+      "name": "2. Resolve seeded references",
+      "item": [
+        {
+          "name": "Get LRU",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/lrus" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('lruId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get Interface",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/interfaces/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('interfaceId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get Connector",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/connectors/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('connectorId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get Signal Library",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/signal-libraries/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('signalLibraryId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get Protocol Tag",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/protocol-tags/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('protocolTagId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get Fault Template",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/fault-templates/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('faultCategoryId', rows[0].id);"
+          ] } }]
         }
-      }
+      ]
     },
     {
-      "name": "Get Test Procedure by ID",
-      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/{{procedureId}}" }
-    },
-    {
-      "name": "Get Test Procedures by LRU",
-      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/by-lru/{{lruId}}" }
-    },
-    {
-      "name": "Get Test Procedures by Status",
-      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/by-status/DRAFT" }
-    },
-    {
-      "name": "Update Test Procedure",
-      "request": {
-        "method": "PUT",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/procedures/{{procedureId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"lru\": { \"id\": {{lruId}} },\n  \"name\": \"Updated Procedure Name\",\n  \"description\": \"Updated via Postman\"\n}"
-        }
-      }
-    },
-    {
-      "name": "List Steps for a Procedure",
-      "request": { "method": "GET", "url": "{{baseUrl}}/procedures/{{procedureId}}/steps" }
-    },
-    {
-      "name": "Add Step to Procedure",
+      "name": "3. Create valid DRAFT procedure",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/procedures/{{procedureId}}/steps",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"expectedBehaviour\": \"Signal present on interface\",\n  \"acceptanceCriteria\": \"Signal within nominal range\",\n  \"passFailCriteria\": \"Pass if within range, fail otherwise\"\n}"
-        }
-      }
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"lruId\": {{lruId}},\n  \"name\": \"AI-190 Submit Regression {{$timestamp}}\",\n  \"description\": \"Full author-to-submit regression procedure\",\n  \"steps\": [{\n    \"interfaceId\": {{interfaceId}},\n    \"connectorId\": {{connectorId}},\n    \"signalLibraryId\": {{signalLibraryId}},\n    \"protocolTagId\": {{protocolTagId}},\n    \"faultCategoryId\": {{faultCategoryId}},\n    \"expectedBehaviour\": \"Signal is present at the selected interface\",\n    \"acceptanceCriteria\": \"Signal remains within the nominal range\",\n    \"executionOrder\": 1,\n    \"passFailCriteria\": \"Pass when the measured signal is nominal; otherwise fail\"\n  }]\n}" },
+        "url": "{{baseUrl}}/procedures"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Procedure is created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+        "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('DRAFT'); pm.expect(body.steps).to.have.lengthOf(1);",
+        "pm.collectionVariables.set('procedureId', body.id); pm.collectionVariables.set('createdVersion', body.versionNumber);"
+      ] } }]
     },
     {
-      "name": "Reorder Steps",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/procedures/{{procedureId}}/steps/reorder",
-        "body": {
-          "mode": "raw",
-          "raw": "[2, 1, 3]"
-        }
-      }
+      "name": "4. Submit procedure for review",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/submit-for-review" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Submission succeeds', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('IN_REVIEW'); pm.expect(body.versionNumber).to.eql(Number(pm.collectionVariables.get('createdVersion')) + 1);"
+      ] } }]
     },
     {
-      "name": "Get Step by ID",
-      "request": { "method": "GET", "url": "{{baseUrl}}/steps/{{stepId}}" }
+      "name": "5. Repeat submission returns 409",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/submit-for-review" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Repeat submission returns conflict', () => pm.response.to.have.status(409));",
+        "pm.expect(pm.response.json().message).to.include('IN_REVIEW');"
+      ] } }]
     },
     {
-      "name": "Update Step",
-      "request": {
-        "method": "PUT",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/steps/{{stepId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"expectedBehaviour\": \"Updated expected behaviour\",\n  \"acceptanceCriteria\": \"Updated acceptance criteria\",\n  \"passFailCriteria\": \"Updated pass/fail criteria\"\n}"
-        }
-      }
-    },
-    {
-      "name": "Delete Step",
-      "request": { "method": "DELETE", "url": "{{baseUrl}}/steps/{{stepId}}" }
-    },
-    {
-      "name": "Delete Test Procedure",
-      "request": { "method": "DELETE", "url": "{{baseUrl}}/procedures/{{procedureId}}" }
+      "name": "6. Missing procedure returns 404",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/999999999/submit-for-review" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Missing procedure returns not found', () => pm.response.to.have.status(404));",
+        "pm.expect(pm.response.json().message).to.include('Test procedure not found');"
+      ] } }]
     }
   ]
 }
