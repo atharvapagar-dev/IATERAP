@@ -10,4 +10,8 @@ export const versionComparisonService = {
             params: { fromVersion, toVersion },
         });
     },
+
+    rollbackToRevision(procedureId, versionNumber) {
+        return api.post(`/procedures/${procedureId}/history/${versionNumber}/rollback`);
+    },
 };

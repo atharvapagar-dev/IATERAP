@@ -50,6 +50,10 @@ export default function ProcedureBuilderPage() {
     const [comparing, setComparing] = useState(false);
     const [compareError, setCompareError] = useState("");
 
+    // AI-187 / T7-B3: rollback creates a new revision and preserves history.
+    const [rollingBackVersion, setRollingBackVersion] = useState(null);
+    const [rollbackError, setRollbackError] = useState("");
+
     const loadAll = useCallback(async () => {
         try {
             setError("");
@@ -300,6 +304,33 @@ export default function ProcedureBuilderPage() {
             );
         } finally {
             setComparing(false);
+        }
+    };
+
+    const handleRollback = async (versionNumber) => {
+        const confirmed = window.confirm(
+            `Roll back to Revision ${versionNumber}? This creates a new revision and leaves existing revisions unchanged.`
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setRollingBackVersion(versionNumber);
+        setRollbackError("");
+        try {
+            await versionComparisonService.rollbackToRevision(id, versionNumber);
+            await loadAll();
+            const historyRes = await versionComparisonService.getHistory(id);
+            setHistory(historyRes.data);
+            setComparison(null);
+        } catch (rollbackErrorResponse) {
+            console.error("Failed to roll back Test Procedure:", rollbackErrorResponse);
+            setRollbackError(
+                rollbackErrorResponse?.response?.data?.message ||
+                    `Unable to roll back to Revision ${versionNumber}. Please try again.`
+            );
+        } finally {
+            setRollingBackVersion(null);
         }
     };
 
@@ -595,6 +626,28 @@ export default function ProcedureBuilderPage() {
                             >
                                 {compareError}
                             </p>
+                        ) : null}
+
+                        {history.length ? (
+                            <div className="stack" style={{ marginTop: "18px" }}>
+                                <p className="helper-text">
+                                    Rollback creates a new revision from the selected revision; no existing revision is modified.
+                                </p>
+                                {history.map((revision) => (
+                                    <div className="page-toolbar" key={revision.versionNumber}>
+                                        <span>Revision {revision.versionNumber}</span>
+                                        <button
+                                            type="button"
+                                            className="button--secondary"
+                                            onClick={() => handleRollback(revision.versionNumber)}
+                                            disabled={rollingBackVersion !== null}
+                                        >
+                                            {rollingBackVersion === revision.versionNumber ? "Rolling back..." : "Rollback"}
+                                        </button>
+                                    </div>
+                                ))}
+                                {rollbackError ? <p style={{ color: "var(--danger)" }}>{rollbackError}</p> : null}
+                            </div>
                         ) : null}
 
                         {comparison && (

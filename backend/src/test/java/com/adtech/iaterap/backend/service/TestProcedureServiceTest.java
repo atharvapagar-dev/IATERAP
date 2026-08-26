@@ -1,6 +1,5 @@
 package com.adtech.iaterap.backend.service;
 
-import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
 import com.adtech.iaterap.backend.dto.TestStepRequest;
@@ -44,6 +43,7 @@ class TestProcedureServiceTest {
     @Mock private SignalLibraryRepository signalLibraryRepository;
     @Mock private ProtocolTagRepository protocolTagRepository;
     @Mock private FaultTemplateRepository faultTemplateRepository;
+    @Mock private AuditService auditService;
 
     private TestProcedureService service;
 
@@ -67,7 +67,7 @@ class TestProcedureServiceTest {
                 protocolTagRepository,
                 faultTemplateRepository,
                 new ObjectMapper().findAndRegisterModules(),
-                new ApprovalStateMachine()
+                auditService
         );
 
         lru = withId(new Lru("LRU-1"), 1L);
@@ -270,7 +270,6 @@ class TestProcedureServiceTest {
         latest.setName("Proc C");
         latest.setDescription("desc");
         latest.setLruId(1L);
-        latest.setLruName("LRU-1");
         latest.setApprovalStatus("DRAFT");
         latest.setStepsSnapshot(matchingSnapshot);
         when(procedureHistoryRepository.findTopByTestProcedureIdOrderByVersionNumberDesc(300L))
@@ -302,6 +301,312 @@ class TestProcedureServiceTest {
         assertThat(history).hasSize(2);
         assertThat(history.get(0).getVersionNumber()).isEqualTo(1);
         assertThat(history.get(1).getVersionNumber()).isEqualTo(2);
+    }
+
+    // ---------- rollback (AI-187 / T7-B3) ----------
+
+    private String snapshotOf(TestStep... steps) {
+        List<com.adtech.iaterap.backend.dto.TestStepResponse> dtos =
+                java.util.Arrays.stream(steps)
+                        .map(com.adtech.iaterap.backend.dto.TestStepResponse::fromEntity)
+                        .toList();
+        return new ObjectMapper().valueToTree(dtos).toString();
+    }
+
+    @Test
+    void rollbackCreatesNewRevisionFromSourceContentAndLeavesHistoryUntouched() {
+        TestProcedure procedure = withId(new TestProcedure(), 500L);
+        procedure.setLru(lru);
+        procedure.setName("Proc R - current name");
+        procedure.setDescription("current desc");
+        procedure.setVersionNumber(3); // currently at v3
+
+        when(testProcedureRepository.findById(500L)).thenReturn(Optional.of(procedure));
+        when(testProcedureRepository.save(any(TestProcedure.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // The live step still exists (same id=111) but its content has
+        // drifted since v1 -- this is what rollback must restore.
+        TestStep liveStep = new TestStep();
+        withId(liveStep, 111L);
+        liveStep.setTestProcedure(procedure);
+        liveStep.setInterfaceEntity(iface);
+        liveStep.setConnector(connector);
+        liveStep.setSignalLibrary(signal);
+        liveStep.setProtocolTag(protocolTag);
+        liveStep.setFaultCategory(faultTemplate);
+        liveStep.setExpectedBehaviour("v3 behaviour (drifted)");
+        liveStep.setAcceptanceCriteria("criteria");
+        liveStep.setPassFailCriteria("pass/fail");
+        liveStep.setExecutionOrder(1);
+
+        List<TestStep> stepsHolder = new ArrayList<>(List.of(liveStep));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(500L))
+                .thenAnswer(inv -> new ArrayList<>(stepsHolder));
+        when(testStepRepository.save(any(TestStep.class))).thenAnswer(inv -> {
+            TestStep s = inv.getArgument(0);
+            stepsHolder.removeIf(existing -> existing.getId().equals(s.getId()));
+            stepsHolder.add(s);
+            return s;
+        });
+
+        TestStep v1StepContent = new TestStep();
+        withId(v1StepContent, 111L); // same id as the live step -> must be reused, not recreated
+        v1StepContent.setInterfaceEntity(iface);
+        v1StepContent.setConnector(connector);
+        v1StepContent.setSignalLibrary(signal);
+        v1StepContent.setProtocolTag(protocolTag);
+        v1StepContent.setFaultCategory(faultTemplate);
+        v1StepContent.setExpectedBehaviour("v1 behaviour (original)");
+        v1StepContent.setAcceptanceCriteria("criteria");
+        v1StepContent.setPassFailCriteria("pass/fail");
+        v1StepContent.setExecutionOrder(1);
+
+        ProcedureHistory sourceRevisionV1 = new ProcedureHistory();
+        sourceRevisionV1.setTestProcedureId(500L);
+        sourceRevisionV1.setVersionNumber(1);
+        sourceRevisionV1.setName("Proc R - original name");
+        sourceRevisionV1.setDescription("original desc");
+        sourceRevisionV1.setLruId(1L);
+        sourceRevisionV1.setApprovalStatus("DRAFT");
+        sourceRevisionV1.setStepsSnapshot(snapshotOf(v1StepContent));
+
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(500L, 1))
+                .thenReturn(Optional.of(sourceRevisionV1));
+
+        TestProcedureResponse response = service.rollbackToRevision(500L, 1);
+
+        // A brand new revision (v4) was created -- the old revision number
+        // (v1) was never reused.
+        assertThat(response.getVersionNumber()).isEqualTo(4);
+        assertThat(response.getName()).isEqualTo("Proc R - original name");
+
+        ArgumentCaptor<ProcedureHistory> captor = ArgumentCaptor.forClass(ProcedureHistory.class);
+        verify(procedureHistoryRepository, times(1)).save(captor.capture());
+        ProcedureHistory newRevision = captor.getValue();
+        assertThat(newRevision.getVersionNumber()).isEqualTo(4);
+        assertThat(newRevision.getStepsSnapshot()).contains("v1 behaviour (original)");
+
+        // The source revision (v1) object itself was never mutated.
+        assertThat(sourceRevisionV1.getVersionNumber()).isEqualTo(1);
+        assertThat(sourceRevisionV1.getName()).isEqualTo("Proc R - original name");
+        assertThat(sourceRevisionV1).isNotSameAs(newRevision);
+
+        // The live step's persisted id (111) was reused, not recreated --
+        // required so Version Comparison matches it by id across revisions.
+        ArgumentCaptor<TestStep> stepCaptor = ArgumentCaptor.forClass(TestStep.class);
+        verify(testStepRepository, atLeastOnce()).save(stepCaptor.capture());
+        TestStep savedStep = stepCaptor.getAllValues().stream()
+                .filter(s -> java.util.Objects.equals(s.getId(), 111L))
+                .findFirst().orElseThrow();
+        assertThat(savedStep.getExpectedBehaviour()).isEqualTo("v1 behaviour (original)");
+        verify(testStepRepository, never()).delete(any());
+    }
+
+    @Test
+    void rollbackRecreatesAStepWhoseOriginalIdWasDeletedByALaterEdit() {
+        TestProcedure procedure = withId(new TestProcedure(), 501L);
+        procedure.setLru(lru);
+        procedure.setName("Proc R2");
+        procedure.setDescription("desc");
+        procedure.setVersionNumber(2);
+
+        when(testProcedureRepository.findById(501L)).thenReturn(Optional.of(procedure));
+        when(testProcedureRepository.save(any(TestProcedure.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Step id=222 from v1 no longer exists live -- it was removed by
+        // a later edit, so the current step list is empty.
+        List<TestStep> stepsHolder = new ArrayList<>();
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(501L))
+                .thenAnswer(inv -> new ArrayList<>(stepsHolder));
+        when(testStepRepository.save(any(TestStep.class))).thenAnswer(inv -> {
+            TestStep s = inv.getArgument(0);
+            if (s.getId() == null) withId(s, System.nanoTime());
+            stepsHolder.add(s);
+            return s;
+        });
+
+        TestStep v1StepContent = new TestStep();
+        withId(v1StepContent, 222L);
+        v1StepContent.setInterfaceEntity(iface);
+        v1StepContent.setConnector(connector);
+        v1StepContent.setSignalLibrary(signal);
+        v1StepContent.setProtocolTag(protocolTag);
+        v1StepContent.setFaultCategory(faultTemplate);
+        v1StepContent.setExpectedBehaviour("v1 behaviour, later deleted");
+        v1StepContent.setAcceptanceCriteria("criteria");
+        v1StepContent.setPassFailCriteria("pass/fail");
+        v1StepContent.setExecutionOrder(1);
+
+        ProcedureHistory sourceRevisionV1 = new ProcedureHistory();
+        sourceRevisionV1.setTestProcedureId(501L);
+        sourceRevisionV1.setVersionNumber(1);
+        sourceRevisionV1.setName("Proc R2");
+        sourceRevisionV1.setDescription("desc");
+        sourceRevisionV1.setLruId(1L);
+        sourceRevisionV1.setApprovalStatus("DRAFT");
+        sourceRevisionV1.setStepsSnapshot(snapshotOf(v1StepContent));
+
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(501L, 1))
+                .thenReturn(Optional.of(sourceRevisionV1));
+
+        service.rollbackToRevision(501L, 1);
+
+        ArgumentCaptor<TestStep> stepCaptor = ArgumentCaptor.forClass(TestStep.class);
+        verify(testStepRepository, atLeastOnce()).save(stepCaptor.capture());
+        TestStep recreated = stepCaptor.getValue();
+        // Content was preserved, but it is necessarily a fresh row -- the
+        // original id (222) no longer existed to be reused.
+        assertThat(recreated.getExpectedBehaviour()).isEqualTo("v1 behaviour, later deleted");
+        assertThat(recreated.getId()).isNotEqualTo(222L);
+    }
+
+    @Test
+    void rollbackAlwaysCreatesANewRevisionEvenIfContentMatchesCurrent() {
+        TestProcedure procedure = withId(new TestProcedure(), 502L);
+        procedure.setLru(lru);
+        procedure.setName("Proc R3");
+        procedure.setDescription("desc");
+        procedure.setVersionNumber(1);
+
+        when(testProcedureRepository.findById(502L)).thenReturn(Optional.of(procedure));
+        when(testProcedureRepository.save(any(TestProcedure.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(502L))
+                .thenReturn(new ArrayList<>());
+
+        ProcedureHistory sourceRevisionV1 = new ProcedureHistory();
+        sourceRevisionV1.setTestProcedureId(502L);
+        sourceRevisionV1.setVersionNumber(1);
+        sourceRevisionV1.setName("Proc R3");
+        sourceRevisionV1.setDescription("desc");
+        sourceRevisionV1.setLruId(1L);
+        sourceRevisionV1.setApprovalStatus("DRAFT");
+        sourceRevisionV1.setStepsSnapshot("[]");
+
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(502L, 1))
+                .thenReturn(Optional.of(sourceRevisionV1));
+
+        TestProcedureResponse response = service.rollbackToRevision(502L, 1);
+
+        // Rollback is an explicit action: unlike update(), it must never
+        // silently suppress the revision write as a "no-op resave".
+        assertThat(response.getVersionNumber()).isEqualTo(2);
+        verify(procedureHistoryRepository, times(1)).save(any());
+    }
+
+    @Test
+    void rollbackRecordsARollbackAuditEntry() {
+        TestProcedure procedure = withId(new TestProcedure(), 503L);
+        procedure.setLru(lru);
+        procedure.setName("Proc R4");
+        procedure.setDescription("desc");
+        procedure.setVersionNumber(1);
+
+        when(testProcedureRepository.findById(503L)).thenReturn(Optional.of(procedure));
+        when(testProcedureRepository.save(any(TestProcedure.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(503L))
+                .thenReturn(new ArrayList<>());
+
+        ProcedureHistory sourceRevisionV1 = new ProcedureHistory();
+        sourceRevisionV1.setTestProcedureId(503L);
+        sourceRevisionV1.setVersionNumber(1);
+        sourceRevisionV1.setName("Proc R4");
+        sourceRevisionV1.setDescription("desc");
+        sourceRevisionV1.setLruId(1L);
+        sourceRevisionV1.setApprovalStatus("DRAFT");
+        sourceRevisionV1.setStepsSnapshot("[]");
+
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(503L, 1))
+                .thenReturn(Optional.of(sourceRevisionV1));
+
+        service.rollbackToRevision(503L, 1);
+
+        verify(auditService, times(1)).record(
+                any(), eq("ROLLBACK"), eq("TestProcedure"), eq("503"), any(), any(), any());
+    }
+
+    @Test
+    void rollbackAuditFailureDoesNotFailTheRollback() {
+        TestProcedure procedure = withId(new TestProcedure(), 504L);
+        procedure.setLru(lru);
+        procedure.setName("Proc R5");
+        procedure.setDescription("desc");
+        procedure.setVersionNumber(1);
+
+        when(testProcedureRepository.findById(504L)).thenReturn(Optional.of(procedure));
+        when(testProcedureRepository.save(any(TestProcedure.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(504L))
+                .thenReturn(new ArrayList<>());
+
+        ProcedureHistory sourceRevisionV1 = new ProcedureHistory();
+        sourceRevisionV1.setTestProcedureId(504L);
+        sourceRevisionV1.setVersionNumber(1);
+        sourceRevisionV1.setName("Proc R5");
+        sourceRevisionV1.setDescription("desc");
+        sourceRevisionV1.setLruId(1L);
+        sourceRevisionV1.setApprovalStatus("DRAFT");
+        sourceRevisionV1.setStepsSnapshot("[]");
+
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(504L, 1))
+                .thenReturn(Optional.of(sourceRevisionV1));
+        when(auditService.record(any(), any(), any(), any(), any(), any(), any()))
+                .thenThrow(new RuntimeException("audit db down"));
+
+        TestProcedureResponse response = service.rollbackToRevision(504L, 1);
+
+        assertThat(response.getVersionNumber()).isEqualTo(2);
+        verify(procedureHistoryRepository, times(1)).save(any());
+    }
+
+    @Test
+    void rollbackThrowsWhenProcedureDoesNotExist() {
+        when(testProcedureRepository.findById(9999L)).thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                java.util.NoSuchElementException.class,
+                () -> service.rollbackToRevision(9999L, 1));
+
+        verify(procedureHistoryRepository, never()).save(any());
+    }
+
+    @Test
+    void rollbackThrowsWhenRevisionDoesNotExist() {
+        TestProcedure procedure = withId(new TestProcedure(), 505L);
+        when(testProcedureRepository.findById(505L)).thenReturn(Optional.of(procedure));
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(505L, 7))
+                .thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                java.util.NoSuchElementException.class,
+                () -> service.rollbackToRevision(505L, 7));
+
+        verify(procedureHistoryRepository, never()).save(any());
+    }
+
+    @Test
+    void rollbackThrowsWhenRevisionBelongsToADifferentProcedure() {
+        // findByTestProcedureIdAndVersionNumber is already scoped by
+        // procedure id, so a revision number that only exists for another
+        // procedure simply isn't found for this one.
+        TestProcedure procedure = withId(new TestProcedure(), 506L);
+        when(testProcedureRepository.findById(506L)).thenReturn(Optional.of(procedure));
+        when(procedureHistoryRepository.findByTestProcedureIdAndVersionNumber(506L, 1))
+                .thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                java.util.NoSuchElementException.class,
+                () -> service.rollbackToRevision(506L, 1));
+    }
+
+    @Test
+    void rollbackRejectsAnInvalidVersionNumber() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> service.rollbackToRevision(507L, 0));
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> service.rollbackToRevision(507L, null));
+
+        verifyNoInteractions(testProcedureRepository);
     }
 
 }

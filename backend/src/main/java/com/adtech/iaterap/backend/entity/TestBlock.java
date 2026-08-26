@@ -6,13 +6,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Organisation-wide reusable Test Block (AI-179 / T7-A1), extending the
- * AI-153 empty shell with the TestStep content fields a block can hold.
- * Intentionally has no Interface/Connector/Signal/Protocol/Fault
- * references of its own: those are LRU-scoped, so a block cannot carry
- * them across LRUs the way "organisation-wide" reuse requires. The
- * target procedure's own bindings are supplied at insert time instead
- * (see TestBlockService.insertIntoProcedure).
+ * Empty-shell entity for the Test Block library (AI-153 / T4-A2).
+ * Schema only - CRUD/business logic is deliberately deferred to Phase 2.
  */
 @Entity
 @Table(name = "test_blocks")
@@ -62,7 +57,6 @@ public class TestBlock {
     @Column(name = "engineer_remarks", length = 1000)
     private String engineerRemarks;
 
-    /** Bumped every time this block is inserted into a procedure. */
     @Column(name = "usage_count", nullable = false)
     private Integer usageCount = 0;
 
@@ -79,11 +73,26 @@ public class TestBlock {
         this.description = description;
     }
 
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getExpectedBehaviour() { return expectedBehaviour; }
     public void setExpectedBehaviour(String v) { this.expectedBehaviour = v; }
     public String getExpectedRange() { return expectedRange; }
@@ -108,7 +117,16 @@ public class TestBlock {
     public void setEngineerRemarks(String v) { this.engineerRemarks = v; }
     public Integer getUsageCount() { return usageCount; }
     public void setUsageCount(Integer v) { this.usageCount = v; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime v) { this.updatedAt = v; }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
