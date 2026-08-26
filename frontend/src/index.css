@@ -355,3 +355,81 @@ textarea {
     font-weight: 700;
     padding: 0.32rem 0.7rem;
 }
+
+/* AI-182/AI-183: Version Comparison (T7-B1 engine / T7-B2 Diff Row) */
+
+.diff-step--added {
+    border-left: 4px solid #1b8a5a;
+}
+
+.diff-step--removed {
+    border-left: 4px solid var(--danger);
+}
+
+.diff-row {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+}
+
+.diff-row__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.diff-row__field-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.diff-row__badge {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+}
+
+.diff-row--added .diff-row__badge {
+    background: #e6f4ea;
+    color: #1b8a5a;
+}
+
+.diff-row--removed .diff-row__badge {
+    background: #fdecea;
+    color: var(--danger);
+}
+
+.diff-row--changed .diff-row__badge {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.diff-row__value {
+    margin: 6px 0 0;
+    color: var(--text);
+    white-space: pre-wrap;
+}
+
+.diff-row__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.diff-row__value--old {
+    color: var(--danger);
+}
+
+.diff-row__value--new {
+    color: #1b8a5a;
+}
+
+.diff-row__value-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
