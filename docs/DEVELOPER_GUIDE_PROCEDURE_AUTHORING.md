@@ -4,7 +4,7 @@
 |---|---|
 | Jira | AI-178 [T6-DOC] Developer Guide: Authoring a Procedure |
 | Status | Documents shipped behaviour (Sprint 2 / Week 6) |
-| Last Updated | 13 August 2026 |
+| Last Updated | 25 August 2026 |
 
 This guide documents the **actually implemented** Procedure Builder,
 Version Management, and Reviewer Comments workflow. It supersedes the
@@ -104,7 +104,19 @@ The procedure fields and all step changes are written in one
 next -- so a failure never leaves a half-saved procedure or an orphaned
 revision.
 
-## 9. How revision creation works
+## 9. Submitting a procedure for review
+
+After saving an existing procedure in `DRAFT`, click **Submit for Review**.
+The Builder calls `POST /api/procedures/{id}/submit-for-review`; on success
+it refreshes the displayed status and version to `IN_REVIEW`.
+
+The backend remains authoritative for the transition. If the procedure has
+no saved Test Steps, has a structurally invalid step, or is no longer in
+`DRAFT`, the Builder displays the returned validation or conflict message.
+Save any local edits before submitting: the action transitions the persisted
+procedure and does not implicitly save unsaved form changes.
+
+## 10. How revision creation works
 
 Every `save`/`update` call recomputes a JSON snapshot of the procedure's
 current fields plus its full ordered step list, and compares it against
@@ -123,7 +135,7 @@ Two consecutive content-changing saves therefore always produce two
 distinct, independently retrievable `procedure_history` rows, and the
 first one is never mutated by the second (Part R).
 
-## 10. Retrieving revision history
+## 11. Retrieving revision history
 
 - `GET /api/procedures/{id}/history` -- every revision for a procedure,
   ordered oldest to newest.
@@ -147,7 +159,7 @@ Two saves against the same procedure should show two rows here, with
 differing between them, and the earlier row's `steps_snapshot`
 unchanged after the later save.
 
-## 11. How Reviewer Comments attach to revisions
+## 12. How Reviewer Comments attach to revisions
 
 A comment always names a `procedureHistoryId` (required) and, in the
 Procedure Builder, is posted against whatever revision is currently the
@@ -166,7 +178,7 @@ POST /api/reviewer-comments
 comment on that revision, shown under **Reviewer Comments (latest
 revision)** in the Builder.
 
-## 12. How comments can attach to Test Steps
+## 13. How comments can attach to Test Steps
 
 Pass a `testStepId` alongside `procedureHistoryId` to anchor a comment to
 one specific step within that revision. In the UI, pick a step from the
@@ -174,7 +186,7 @@ one specific step within that revision. In the UI, pick a step from the
 id -- i.e. have been saved at least once -- are selectable) before
 submitting the comment.
 
-## 13. Validation rules
+## 14. Validation rules
 
 **Backend-authoritative, always enforced:**
 
@@ -199,7 +211,7 @@ submitting the comment.
 LRU-scoped dropdowns as described in Section 3. None of this replaces
 the backend checks above.
 
-## 14. API endpoint summary
+## 15. API endpoint summary
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -207,6 +219,7 @@ the backend checks above.
 | GET | `/api/procedures/{id}` | Get one procedure + its ordered steps |
 | POST | `/api/procedures` | Create a procedure (steps included) -> revision 1 |
 | PUT | `/api/procedures/{id}` | Update a procedure (steps included) -> new revision if content changed |
+| POST | `/api/procedures/{id}/submit-for-review` | Transition a structurally valid DRAFT procedure to IN_REVIEW |
 | GET | `/api/procedures/{id}/history` | List all revisions, oldest first |
 | GET | `/api/procedures/{id}/history/{versionNumber}` | Get one revision |
 | POST | `/api/reviewer-comments` | Create a comment on a revision (+ optional step) |

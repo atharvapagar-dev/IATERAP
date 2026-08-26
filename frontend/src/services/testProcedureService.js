@@ -17,6 +17,10 @@ export const testProcedureService = {
         return api.put(`/procedures/${id}`, procedure);
     },
 
+    submitForReview(id) {
+        return api.post(`/procedures/${id}/submit-for-review`);
+    },
+
     getHistory(id) {
         return api.get(`/procedures/${id}/history`);
     },
