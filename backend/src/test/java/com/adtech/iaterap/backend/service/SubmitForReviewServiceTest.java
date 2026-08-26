@@ -134,6 +134,33 @@ class SubmitForReviewServiceTest {
         verify(testProcedureRepository, never()).save(procedure);
     }
 
+    @Test
+    void submitFromApprovedIsRejectedWithoutPersistingAStateChange() {
+        TestProcedure procedure = procedure(1L, "APPROVED");
+        TestStep step = boundStep(10L, procedure);
+        when(testProcedureRepository.findById(1L)).thenReturn(Optional.of(procedure));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(1L))
+                .thenReturn(List.of(step));
+
+        assertThatThrownBy(() -> service.submitForReview(1L))
+                .isInstanceOf(InvalidApprovalTransitionException.class)
+                .hasMessageContaining("APPROVED");
+
+        verify(testProcedureRepository, never()).save(procedure);
+    }
+
+    @Test
+    void submitForMissingProcedureIsRejectedWithoutPersisting() {
+        when(testProcedureRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.submitForReview(999L))
+                .isInstanceOf(java.util.NoSuchElementException.class)
+                .hasMessageContaining("Test procedure not found: 999");
+
+        verify(testStepRepository, never()).findByTestProcedureIdOrderByExecutionOrderAsc(999L);
+        verify(testProcedureRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
     private static TestProcedure procedure(Long id, String approvalStatus) {
         TestProcedure procedure = new TestProcedure();
         withId(procedure, id);
