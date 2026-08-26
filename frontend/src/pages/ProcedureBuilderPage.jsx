@@ -15,6 +15,8 @@ export default function ProcedureBuilderPage() {
     const [procedure, setProcedure] = useState(null);
     const [steps, setSteps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submittingForReview, setSubmittingForReview] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState("");
     const [error, setError] = useState("");
 
     // AI-182/AI-183: Version Comparison
@@ -161,6 +163,26 @@ export default function ProcedureBuilderPage() {
         }
     };
 
+    const handleSubmitForReview = async () => {
+        setError("");
+        setSubmitMessage("");
+        setSubmittingForReview(true);
+
+        try {
+            const response = await testProcedureService.submitForReview(id);
+            await loadAll();
+            setSubmitMessage(`Submitted for review - now at version ${response.data.versionNumber}.`);
+        } catch (submitError) {
+            console.error("Failed to submit Test Procedure for review:", submitError);
+            setError(
+                submitError?.response?.data?.message ||
+                    "Could not submit this Test Procedure for review. Resolve any validation errors and try again."
+            );
+        } finally {
+            setSubmittingForReview(false);
+        }
+    };
+
     if (loading) {
         return (
             <ManagementLayout title="Procedure Builder" description="Loading...">
@@ -184,6 +206,7 @@ export default function ProcedureBuilderPage() {
             description={`LRU: ${procedure.lru?.name || "-"}  |  Status: ${procedure.approvalStatus}  |  Version: ${procedure.versionNumber}`}
         >
             {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
+            {submitMessage ? <p className="helper-text">{submitMessage}</p> : null}
 
             <section className="stack">
                 {!steps.length ? (
@@ -216,6 +239,15 @@ export default function ProcedureBuilderPage() {
             <section className="stack" style={{ marginTop: "28px" }}>
                 <div className="page-toolbar">
                     <h2 className="section-title" style={{ margin: 0 }}>Version Comparison</h2>
+                    {procedure.approvalStatus === "DRAFT" ? (
+                        <button
+                            type="button"
+                            onClick={handleSubmitForReview}
+                            disabled={submittingForReview}
+                        >
+                            {submittingForReview ? "Submitting..." : "Submit for Review"}
+                        </button>
+                    ) : null}
                     <button type="button" className="button--secondary" onClick={handleToggleCompare}>
                         {showCompare ? "Hide" : "Compare Revisions"}
                     </button>

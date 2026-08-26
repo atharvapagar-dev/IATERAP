@@ -25,6 +25,10 @@ export const testProcedureService = {
         return api.delete(`/procedures/${id}`);
     },
 
+    submitForReview(id) {
+        return api.post(`/procedures/${id}/submit-for-review`);
+    },
+
     getSteps(procedureId) {
         return api.get(`/procedures/${procedureId}/steps`);
     },
@@ -35,5 +39,13 @@ export const testProcedureService = {
 
     reorderSteps(procedureId, orderedStepIds) {
         return api.patch(`/procedures/${procedureId}/steps/reorder`, orderedStepIds);
+    },
+
+    getHistory(id) {
+        return api.get(`/procedures/${id}/history`);
+    },
+
+    getRevision(id, versionNumber) {
+        return api.get(`/procedures/${id}/history/${versionNumber}`);
     },
 };
