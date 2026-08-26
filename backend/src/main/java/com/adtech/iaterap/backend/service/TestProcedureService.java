@@ -1,5 +1,7 @@
 package com.adtech.iaterap.backend.service;
 
+import com.adtech.iaterap.backend.approval.ApprovalState;
+import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
 import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
@@ -58,6 +60,7 @@ public class TestProcedureService {
     private final FaultTemplateRepository faultTemplateRepository;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
+    private ApprovalStateMachine approvalStateMachine;
 
     public TestProcedureService(
             TestProcedureRepository testProcedureRepository,
@@ -83,6 +86,28 @@ public class TestProcedureService {
         this.faultTemplateRepository = faultTemplateRepository;
         this.objectMapper = objectMapper;
         this.auditService = auditService;
+        this.approvalStateMachine = new ApprovalStateMachine();
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TestProcedureService(
+            TestProcedureRepository testProcedureRepository,
+            TestStepRepository testStepRepository,
+            ProcedureHistoryRepository procedureHistoryRepository,
+            LruRepository lruRepository,
+            InterfaceRepository interfaceRepository,
+            ConnectorRepository connectorRepository,
+            SignalLibraryRepository signalLibraryRepository,
+            ProtocolTagRepository protocolTagRepository,
+            FaultTemplateRepository faultTemplateRepository,
+            ObjectMapper objectMapper,
+            ApprovalStateMachine approvalStateMachine
+    ) {
+        this(testProcedureRepository, testStepRepository, procedureHistoryRepository,
+                lruRepository, interfaceRepository, connectorRepository,
+                signalLibraryRepository, protocolTagRepository, faultTemplateRepository,
+                objectMapper, (AuditService) null);
+        this.approvalStateMachine = approvalStateMachine;
     }
 
     // ---------- reads ----------
@@ -155,6 +180,45 @@ public class TestProcedureService {
         }
 
         return TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+    }
+
+    // ---------- submit for review (AI-188 / AI-189) ----------
+
+    @Transactional
+    public TestProcedureResponse submitForReview(Long id) {
+        TestProcedure procedure = requireProcedure(id);
+        List<TestStep> steps = orderedSteps(procedure);
+        validateStructuralWellFormedness(steps);
+
+        ApprovalState currentState = ApprovalState.valueOf(procedure.getApprovalStatus());
+        ApprovalState nextState = approvalStateMachine.transition(currentState, ApprovalState.IN_REVIEW);
+        procedure.setApprovalStatus(nextState.name());
+        procedure.setVersionNumber(procedure.getVersionNumber() + 1);
+        procedure.setUpdatedAt(java.time.LocalDateTime.now());
+        testProcedureRepository.save(procedure);
+        writeRevision(procedure, procedure.getVersionNumber());
+        return TestProcedureResponse.fromEntity(procedure, steps);
+    }
+
+    private void validateStructuralWellFormedness(List<TestStep> steps) {
+        if (steps.isEmpty()) {
+            throw new IllegalStateException("Cannot submit a procedure with no Test Steps for review.");
+        }
+        for (TestStep step : steps) {
+            boolean boundToSomething = step.getInterfaceEntity() != null
+                    || step.getConnector() != null
+                    || step.getSignalLibrary() != null
+                    || step.getProtocolTag() != null
+                    || step.getFaultCategory() != null;
+            if (!boundToSomething) {
+                throw new IllegalStateException(
+                        "Test step id=" + step.getId() + " (execution order "
+                                + step.getExecutionOrder() + ") is not bound to any Interface, "
+                                + "Connector, Signal Library, Protocol Tag, or Fault Category. "
+                                + "Every step must exercise something to be submitted for review."
+                );
+            }
+        }
     }
 
     // ---------- rollback (AI-187 / T7-B3) ----------
@@ -464,6 +528,7 @@ public class TestProcedureService {
         history.setName(procedure.getName());
         history.setDescription(procedure.getDescription());
         history.setLruId(procedure.getLru().getId());
+        history.setLruName(procedure.getLru().getName());
         history.setApprovalStatus(procedure.getApprovalStatus());
         history.setStepsSnapshot(serializeSteps(orderedSteps(procedure)));
         history.setCreatedBy(resolveActor());
