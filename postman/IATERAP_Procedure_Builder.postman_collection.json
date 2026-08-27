@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "IATERAP Procedure Authoring and Submit Regression",
-    "description": "AI-190 / T8-A3 regression collection for the authenticated author -> save -> submit-for-review flow.",
+    "description": "AI-195 / T8-QA regression collection for the authenticated author -> version -> submit-for-review flow.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -16,7 +16,8 @@
     { "key": "protocolTagId", "value": "" },
     { "key": "faultCategoryId", "value": "" },
     { "key": "procedureId", "value": "" },
-    { "key": "createdVersion", "value": "" }
+    { "key": "createdVersion", "value": "" },
+    { "key": "updatedVersion", "value": "" }
   ],
   "item": [
     {
@@ -95,19 +96,55 @@
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('Procedure is created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
         "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('DRAFT'); pm.expect(body.steps).to.have.lengthOf(1);",
-        "pm.collectionVariables.set('procedureId', body.id); pm.collectionVariables.set('createdVersion', body.versionNumber);"
+        "pm.collectionVariables.set('procedureId', body.id); pm.collectionVariables.set('createdVersion', body.versionNumber); pm.collectionVariables.set('stepId', body.steps[0].id);"
       ] } }]
     },
     {
-      "name": "4. Submit procedure for review",
+      "name": "4. Update procedure and create version 2",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"lruId\": {{lruId}},\n  \"name\": \"AI-195 Submit Regression {{$timestamp}}\",\n  \"description\": \"Full author-to-version-to-submit regression procedure\",\n  \"steps\": [{\n    \"id\": {{stepId}},\n    \"interfaceId\": {{interfaceId}},\n    \"connectorId\": {{connectorId}},\n    \"signalLibraryId\": {{signalLibraryId}},\n    \"protocolTagId\": {{protocolTagId}},\n    \"faultCategoryId\": {{faultCategoryId}},\n    \"expectedBehaviour\": \"Signal is present at the selected interface after revision\",\n    \"acceptanceCriteria\": \"Signal remains within the revised nominal range\",\n    \"executionOrder\": 1,\n    \"passFailCriteria\": \"Pass when the revised measured signal is nominal; otherwise fail\"\n  }]\n}" },
+        "url": "{{baseUrl}}/procedures/{{procedureId}}"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Procedure revision succeeds', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('DRAFT'); pm.expect(body.versionNumber).to.eql(Number(pm.collectionVariables.get('createdVersion')) + 1);",
+        "pm.collectionVariables.set('updatedVersion', body.versionNumber); pm.collectionVariables.set('stepId', body.steps[0].id);"
+      ] } }]
+    },
+    {
+      "name": "5. Retrieve revision history",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/history" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Revision history is available', () => pm.response.to.have.status(200));",
+        "const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.have.lengthOf.at.least(2);",
+        "pm.expect(rows.map(row => row.versionNumber)).to.include(Number(pm.collectionVariables.get('createdVersion')));",
+        "pm.expect(rows.map(row => row.versionNumber)).to.include(Number(pm.collectionVariables.get('updatedVersion')));"
+      ] } }]
+    },
+    {
+      "name": "6. Compare authoring revisions",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/compare?fromVersion={{createdVersion}}&toVersion={{updatedVersion}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Revision comparison succeeds', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json(); pm.expect(body.fromVersion).to.eql(Number(pm.collectionVariables.get('createdVersion'))); pm.expect(body.toVersion).to.eql(Number(pm.collectionVariables.get('updatedVersion')));",
+        "pm.expect(body.changedStepCount).to.be.at.least(1);"
+      ] } }]
+    },
+    {
+      "name": "7. Submit procedure for review",
       "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/submit-for-review" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('Submission succeeds', () => pm.response.to.have.status(200));",
-        "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('IN_REVIEW'); pm.expect(body.versionNumber).to.eql(Number(pm.collectionVariables.get('createdVersion')) + 1);"
+        "const body = pm.response.json(); pm.expect(body.approvalStatus).to.eql('IN_REVIEW'); pm.expect(body.versionNumber).to.eql(Number(pm.collectionVariables.get('updatedVersion')) + 1);"
       ] } }]
     },
     {
-      "name": "5. Repeat submission returns 409",
+      "name": "8. Repeat submission returns 409",
       "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/submit-for-review" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('Repeat submission returns conflict', () => pm.response.to.have.status(409));",
@@ -115,7 +152,7 @@
       ] } }]
     },
     {
-      "name": "6. Missing procedure returns 404",
+      "name": "9. Missing procedure returns 404",
       "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/999999999/submit-for-review" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('Missing procedure returns not found', () => pm.response.to.have.status(404));",
