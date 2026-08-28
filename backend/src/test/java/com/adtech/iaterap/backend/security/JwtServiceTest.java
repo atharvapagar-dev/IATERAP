@@ -41,8 +41,12 @@ class JwtServiceTest {
     @Test
     void shouldRejectTamperedToken() {
         String token = jwtService.generateAccessToken("viewer");
-        int midpoint = token.length() / 2;
-        String tamperedToken = token.substring(0, midpoint) + "x" + token.substring(midpoint + 1);
+        int signatureStart = token.lastIndexOf('.') + 1;
+        char original = token.charAt(signatureStart);
+        char replacement = original == 'a' ? 'b' : 'a';
+        String tamperedToken = token.substring(0, signatureStart)
+                + replacement
+                + token.substring(signatureStart + 1);
 
         assertFalse(jwtService.validateToken(tamperedToken));
     }
