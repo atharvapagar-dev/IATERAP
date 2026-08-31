@@ -2,6 +2,9 @@ package com.adtech.iaterap.backend.coverage.rule;
 
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.TestProcedure;
+import com.adtech.iaterap.backend.entity.TestStep;
+
+import java.util.List;
 
 /**
  * A single deterministic, side-effect-free engineering rule.
@@ -34,4 +37,9 @@ public interface EngineeringRule {
 
     /** Evaluates this rule without mutating either input. */
     RuleResult evaluate(TestProcedure procedure, Lru lru);
+
+    /** Evaluates a procedure together with its ordered structured steps. */
+    default RuleResult evaluate(TestProcedure procedure, Lru lru, List<TestStep> steps) {
+        return evaluate(procedure, lru);
+    }
 }
