@@ -1,16 +1,16 @@
 :root {
-    color-scheme: light;
-    --bg: #f5f7fb;
-    --surface: #ffffff;
-    --surface-strong: #eef3ff;
-    --border: #d8e0ee;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --primary: #355bf5;
-    --primary-dark: #2746ca;
-    --danger: #c62828;
-    --shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
-    --radius: 16px;
+    color-scheme: dark;
+    --bg: #080a0d;
+    --surface: #11151a;
+    --surface-strong: #152734;
+    --border: #2a343d;
+    --text: #f2f6f8;
+    --muted: #8d9aa3;
+    --primary: #25b8f2;
+    --primary-dark: #0c8fca;
+    --danger: #ef6262;
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+    --radius: 10px;
 }
 
 * {
@@ -26,7 +26,8 @@ body,
 body {
     margin: 0;
     background:
-        radial-gradient(circle at top, #eef4ff 0, #f5f7fb 32%, #edf2f7 100%);
+        radial-gradient(circle at 72% -10%, rgba(27, 126, 164, 0.2), transparent 34%),
+        linear-gradient(135deg, #080a0d 0%, #0d1115 55%, #10181d 100%);
     color: var(--text);
     font-family:
         Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -56,7 +57,7 @@ button,
     border: 1px solid transparent;
     border-radius: 12px;
     background: var(--primary);
-    color: #fff;
+    color: #031018;
     cursor: pointer;
     font-weight: 600;
     padding: 0.8rem 1rem;
@@ -109,7 +110,7 @@ textarea {
     width: 100%;
     border: 1px solid var(--border);
     border-radius: 12px;
-    background: #fff;
+    background: #0c1115;
     padding: 0.9rem 1rem;
     color: var(--text);
     transition:
@@ -139,21 +140,40 @@ textarea {
 .management-shell__header,
 .page-card,
 .form-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(216, 224, 238, 0.9);
+    background: linear-gradient(145deg, rgba(19, 25, 30, 0.97), rgba(11, 15, 19, 0.96));
+    border: 1px solid rgba(72, 89, 101, 0.65);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
 }
 
 .management-shell__header {
-    padding: 28px;
+    padding: 26px 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.brand-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; }
+.brand-mark { margin:0; color:#fff; font-size:1.05rem; font-weight:800; letter-spacing:.16em; }
+.brand-mark span { color:var(--primary); font-weight:500; }
+.system-status { margin:0; color:#7ed6ad; font-size:.7rem; letter-spacing:.12em; font-weight:700; }
+.system-status i { display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:#53d395; box-shadow:0 0 10px #53d395; }
+
+.management-shell__header::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), transparent 70%);
+    opacity: 0.9;
 }
 
 .management-shell__header h1,
 .page-title {
     margin: 0;
     font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     letter-spacing: -0.03em;
 }
 
@@ -184,7 +204,7 @@ textarea {
     align-items: center;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: #fff;
+    background: #131a20;
     color: var(--text);
     font-weight: 600;
     padding: 0.55rem 0.9rem;
@@ -193,7 +213,7 @@ textarea {
 
 .management-shell__nav a:hover {
     border-color: var(--primary);
-    color: var(--primary-dark);
+    color: var(--primary);
 }
 
 .management-shell__session {
@@ -226,6 +246,17 @@ textarea {
 .page-grid--two {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
+
+.project-grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+.project-card { padding:22px; min-height:210px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(150deg,#171e24,#101419); border:1px solid #2b3942; border-radius:var(--radius); box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.project-card::before { content:""; position:absolute; width:150px; height:150px; right:-50px; top:-60px; border:1px solid rgba(37,184,242,.2); border-radius:50%; box-shadow:0 0 0 20px rgba(37,184,242,.03),0 0 0 40px rgba(37,184,242,.02); }
+.project-card__top { display:flex; justify-content:space-between; align-items:center; }
+.project-card__id { color:#6f7e87; font-size:.72rem; letter-spacing:.12em; }
+.project-card h2 { margin:28px 0 8px; font-size:1.25rem; letter-spacing:.02em; }
+.project-card p { color:var(--muted); margin:0 0 20px; font-size:.9rem; }
+.project-card__link { align-self:flex-start; padding:.55rem 0; border:0; background:transparent; color:var(--primary); box-shadow:none; }
+.project-card__link:hover { background:transparent; box-shadow:none; transform:none; color:#8cdefc; }
+.project-card__link span { margin-left:8px; font-size:1.05rem; }
 
 .page-card,
 .form-card {
@@ -272,7 +303,7 @@ textarea {
     border-collapse: collapse;
     overflow: hidden;
     border-radius: 14px;
-    background: #fff;
+    background: #12181d;
     border: 1px solid var(--border);
 }
 
@@ -285,13 +316,13 @@ textarea {
 }
 
 .entity-table th {
-    background: #f8faff;
-    color: #374151;
+    background: #182128;
+    color: #c7d4db;
     font-size: 0.9rem;
 }
 
 .entity-table tbody tr:hover {
-    background: #f9fbff;
+    background: #172127;
 }
 
 .table-actions {
@@ -307,7 +338,7 @@ textarea {
 .empty-state {
     border: 1px dashed var(--border);
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(17, 24, 29, 0.75);
     color: var(--muted);
     padding: 22px;
     text-align: center;
@@ -322,7 +353,7 @@ textarea {
 .detail-item {
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: #fff;
+    background: #12181d;
     padding: 16px;
 }
 

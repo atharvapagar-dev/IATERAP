@@ -23,9 +23,11 @@ export default function ManagementLayout({
     return (
         <div className="management-shell">
             <header className="management-shell__header">
-                <p className="eyebrow">
-                    IATERAP management console
-                </p>
+                <div className="brand-row">
+                    <p className="brand-mark">IATERAP<span>/OPS</span></p>
+                    <p className="system-status"><i /> SYSTEM OPERATIONAL</p>
+                </div>
+                <p className="eyebrow">Aerospace test intelligence platform</p>
 
                 <h1>{title}</h1>
                 <p className="management-shell__description">
@@ -70,7 +72,7 @@ export default function ManagementLayout({
 
                 <div className="management-shell__session">
                     <span>
-                        Session: {token ? "Active" : "Guest"}
+                        SESSION / {token ? "ACTIVE" : "GUEST"}
                     </span>
                     {token ? (
                         <button onClick={handleLogout}>Logout</button>
