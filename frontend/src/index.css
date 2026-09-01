@@ -1,16 +1,16 @@
 :root {
     color-scheme: dark;
-    --bg: #080a0d;
-    --surface: #11151a;
-    --surface-strong: #152734;
-    --border: #2a343d;
+    --bg: #0b1117;
+    --surface: #17212b;
+    --surface-strong: #203747;
+    --border: #334452;
     --text: #f2f6f8;
     --muted: #8d9aa3;
     --primary: #25b8f2;
     --primary-dark: #0c8fca;
     --danger: #ef6262;
-    --shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
-    --radius: 10px;
+    --shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    --radius: 8px;
 }
 
 * {
@@ -25,9 +25,7 @@ body,
 
 body {
     margin: 0;
-    background:
-        radial-gradient(circle at 72% -10%, rgba(27, 126, 164, 0.2), transparent 34%),
-        linear-gradient(135deg, #080a0d 0%, #0d1115 55%, #10181d 100%);
+    background: var(--bg);
     color: var(--text);
     font-family:
         Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -55,7 +53,7 @@ button,
 .button {
     appearance: none;
     border: 1px solid transparent;
-    border-radius: 12px;
+    border-radius: 6px;
     background: var(--primary);
     color: #031018;
     cursor: pointer;
@@ -70,8 +68,7 @@ button,
 button:hover,
 .button:hover {
     background: var(--primary-dark);
-    box-shadow: 0 10px 18px rgba(53, 91, 245, 0.18);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(37, 184, 242, 0.18);
 }
 
 button:disabled,
@@ -84,14 +81,14 @@ button:disabled,
 
 button.button--secondary,
 .button.button--secondary {
-    background: #eef2ff;
-    color: var(--primary-dark);
-    border-color: #d6ddff;
+    background: transparent;
+    color: var(--primary);
+    border-color: var(--border);
 }
 
 button.button--secondary:hover,
 .button.button--secondary:hover {
-    background: #dfe7ff;
+    background: #1d2b36;
 }
 
 button.button--danger,
@@ -109,8 +106,8 @@ select,
 textarea {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 12px;
-    background: #0c1115;
+    border-radius: 6px;
+    background: #0f171e;
     padding: 0.9rem 1rem;
     color: var(--text);
     transition:
@@ -123,7 +120,7 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(53, 91, 245, 0.12);
+    box-shadow: 0 0 0 3px rgba(37, 184, 242, 0.16);
 }
 
 textarea {
@@ -140,11 +137,11 @@ textarea {
 .management-shell__header,
 .page-card,
 .form-card {
-    background: linear-gradient(145deg, rgba(19, 25, 30, 0.97), rgba(11, 15, 19, 0.96));
-    border: 1px solid rgba(72, 89, 101, 0.65);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
 }
 
 .management-shell__header {
@@ -164,7 +161,7 @@ textarea {
     position: absolute;
     inset: 0 0 auto 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--primary), transparent 70%);
+    background: var(--primary);
     opacity: 0.9;
 }
 
@@ -203,8 +200,8 @@ textarea {
     display: inline-flex;
     align-items: center;
     border: 1px solid var(--border);
-    border-radius: 999px;
-    background: #131a20;
+    border-radius: 6px;
+    background: #1d2933;
     color: var(--text);
     font-weight: 600;
     padding: 0.55rem 0.9rem;
@@ -248,8 +245,8 @@ textarea {
 }
 
 .project-grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
-.project-card { padding:22px; min-height:210px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(150deg,#171e24,#101419); border:1px solid #2b3942; border-radius:var(--radius); box-shadow:var(--shadow); position:relative; overflow:hidden; }
-.project-card::before { content:""; position:absolute; width:150px; height:150px; right:-50px; top:-60px; border:1px solid rgba(37,184,242,.2); border-radius:50%; box-shadow:0 0 0 20px rgba(37,184,242,.03),0 0 0 40px rgba(37,184,242,.02); }
+.project-card { padding:22px; min-height:210px; display:flex; flex-direction:column; justify-content:space-between; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.project-card::before { content:""; position:absolute; width:120px; height:120px; right:-52px; top:-55px; border:1px solid rgba(37,184,242,.22); border-radius:50%; }
 .project-card__top { display:flex; justify-content:space-between; align-items:center; }
 .project-card__id { color:#6f7e87; font-size:.72rem; letter-spacing:.12em; }
 .project-card h2 { margin:28px 0 8px; font-size:1.25rem; letter-spacing:.02em; }
