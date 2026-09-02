@@ -29,6 +29,10 @@ export const testProcedureService = {
         return api.post(`/procedures/${id}/submit-for-review`);
     },
 
+    getReviewQueue() {
+        return api.get(`/procedures/review-queue`);
+    },
+
     getSteps(procedureId) {
         return api.get(`/procedures/${procedureId}/steps`);
     },
