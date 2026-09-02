@@ -26,33 +26,21 @@ export default function ProjectListPage() {
             title="Project Management"
             description="Use projects as the top-level workspace, then drill into aircraft and subsystem administration from here."
         >
-            <div style={{ marginBottom: "16px" }}>
-                <button onClick={() => navigate("/projects/create")}>
-                    Create Project
-                </button>
+            <div className="page-toolbar">
+                <div><p className="eyebrow">ACTIVE WORKSPACES</p><p className="helper-text">Select a programme to inspect its engineering context.</p></div>
+                <button onClick={() => navigate("/projects/create")}>+ Create Project</button>
             </div>
 
-            <div
-                style={{
-                    display: "grid",
-                    gap: "16px",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                }}
-            >
+            <div className="project-grid">
                 {projects.map((project) => (
                     <section
                         key={project.id}
-                        style={{
-                            border: "1px solid #ddd",
-                            borderRadius: "8px",
-                            padding: "16px",
-                        }}
+                        className="project-card"
                     >
-                        <h2 style={{ marginTop: 0 }}>{project.name}</h2>
+                        <div className="project-card__top"><span className="status-pill">ACTIVE</span><span className="project-card__id">PRJ-{String(project.id).padStart(3, "0")}</span></div>
+                        <h2>{project.name}</h2>
                         <p>{project.description || "No description provided."}</p>
-                        <button onClick={() => navigate(`/projects/${project.id}`)}>
-                            Open Project
-                        </button>
+                        <button className="project-card__link" onClick={() => navigate(`/projects/${project.id}`)}>Open workspace <span>↗</span></button>
                     </section>
                 ))}
             </div>
