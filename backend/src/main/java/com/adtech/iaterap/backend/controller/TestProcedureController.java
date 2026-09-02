@@ -57,6 +57,11 @@ public class TestProcedureController {
         return service.submitForReview(id);
     }
 
+    @GetMapping("/review-queue")
+    public List<TestProcedureResponse> getReviewQueue() {
+        return service.getReviewQueue();
+    }
+
     @GetMapping("/{id}/history")
     public List<ProcedureHistoryResponse> getHistory(@PathVariable Long id) {
         return service.getHistory(id);
