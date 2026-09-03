@@ -3,12 +3,14 @@ package com.adtech.iaterap.backend.coverage.rule;
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.entity.TestStep;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /** Structural rule ensuring every step references a signal from the procedure LRU. */
+@Component
 public final class TestStepSignalRule implements EngineeringRule {
 
     @Override public String getRuleId() { return "STRUCT-TEST-STEP-SIGNAL"; }
