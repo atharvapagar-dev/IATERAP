@@ -2,6 +2,9 @@ package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.approval.ApprovalState;
 import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
+import com.adtech.iaterap.backend.coverage.rule.RuleEngine;
+import com.adtech.iaterap.backend.coverage.rule.RuleCategory;
+import com.adtech.iaterap.backend.coverage.rule.RuleResult;
 import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
@@ -60,6 +63,7 @@ public class TestProcedureService {
     private final FaultTemplateRepository faultTemplateRepository;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
+    private final RuleEngine ruleEngine;
     private ApprovalStateMachine approvalStateMachine;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -74,7 +78,8 @@ public class TestProcedureService {
             ProtocolTagRepository protocolTagRepository,
             FaultTemplateRepository faultTemplateRepository,
             ObjectMapper objectMapper,
-            AuditService auditService
+            AuditService auditService,
+            RuleEngine ruleEngine
     ) {
         this.testProcedureRepository = testProcedureRepository;
         this.testStepRepository = testStepRepository;
@@ -87,7 +92,28 @@ public class TestProcedureService {
         this.faultTemplateRepository = faultTemplateRepository;
         this.objectMapper = objectMapper;
         this.auditService = auditService;
+        this.ruleEngine = ruleEngine;
         this.approvalStateMachine = new ApprovalStateMachine();
+    }
+
+    /** Kept for existing callers and isolated tests without a rule engine. */
+    public TestProcedureService(
+            TestProcedureRepository testProcedureRepository,
+            TestStepRepository testStepRepository,
+            ProcedureHistoryRepository procedureHistoryRepository,
+            LruRepository lruRepository,
+            InterfaceRepository interfaceRepository,
+            ConnectorRepository connectorRepository,
+            SignalLibraryRepository signalLibraryRepository,
+            ProtocolTagRepository protocolTagRepository,
+            FaultTemplateRepository faultTemplateRepository,
+            ObjectMapper objectMapper,
+            AuditService auditService
+    ) {
+        this(testProcedureRepository, testStepRepository, procedureHistoryRepository,
+                lruRepository, interfaceRepository, connectorRepository,
+                signalLibraryRepository, protocolTagRepository, faultTemplateRepository,
+                objectMapper, auditService, null);
     }
 
     public TestProcedureService(
@@ -106,7 +132,7 @@ public class TestProcedureService {
         this(testProcedureRepository, testStepRepository, procedureHistoryRepository,
                 lruRepository, interfaceRepository, connectorRepository,
                 signalLibraryRepository, protocolTagRepository, faultTemplateRepository,
-                objectMapper, (AuditService) null);
+                objectMapper, null, null);
         this.approvalStateMachine = approvalStateMachine;
     }
 
@@ -188,7 +214,7 @@ public class TestProcedureService {
     public TestProcedureResponse submitForReview(Long id) {
         TestProcedure procedure = requireProcedure(id);
         List<TestStep> steps = orderedSteps(procedure);
-        validateStructuralWellFormedness(steps);
+        validateStructuralWellFormedness(procedure, steps);
 
         ApprovalState currentState = ApprovalState.valueOf(procedure.getApprovalStatus());
         ApprovalState nextState = approvalStateMachine.transition(currentState, ApprovalState.IN_REVIEW);
@@ -200,9 +226,17 @@ public class TestProcedureService {
         return TestProcedureResponse.fromEntity(procedure, steps);
     }
 
-    private void validateStructuralWellFormedness(List<TestStep> steps) {
+    private void validateStructuralWellFormedness(TestProcedure procedure, List<TestStep> steps) {
         if (steps.isEmpty()) {
             throw new IllegalStateException("Cannot submit a procedure with no Test Steps for review.");
+        }
+        if (ruleEngine != null) {
+            for (RuleResult result : ruleEngine.evaluate(procedure, procedure.getLru(), steps).values()) {
+                if (result.getCategory() == RuleCategory.STRUCTURAL && !result.isPassed()) {
+                    throw new IllegalStateException("Structural validation failed for rule "
+                            + result.getRuleId() + ": " + result.getExplanation());
+                }
+            }
         }
         for (TestStep step : steps) {
             boolean boundToSomething = step.getInterfaceEntity() != null

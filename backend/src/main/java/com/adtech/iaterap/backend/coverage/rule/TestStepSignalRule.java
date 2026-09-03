@@ -7,8 +7,10 @@ import com.adtech.iaterap.backend.entity.TestStep;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 /** Structural rule ensuring every step references a signal from the procedure LRU. */
+@Component
 public final class TestStepSignalRule implements EngineeringRule {
 
     @Override public String getRuleId() { return "STRUCT-TEST-STEP-SIGNAL"; }

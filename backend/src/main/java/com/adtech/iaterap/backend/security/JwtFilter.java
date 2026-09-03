@@ -13,6 +13,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import com.adtech.iaterap.backend.repository.UserRepository;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -21,9 +24,11 @@ public class JwtFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public JwtFilter(JwtService jwtService) {
+    public JwtFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -44,11 +49,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
                     String username = jwtService.extractUsername(token);
 
+                    var authorities = userRepository.findByUsername(username)
+                            .map(user -> user.getRole() == null ? Collections.<SimpleGrantedAuthority>emptyList()
+                                : List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+                            .orElse(Collections.emptyList());
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     username,
                                     null,
-                                    Collections.emptyList()
+                                    authorities
                             );
 
                     SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
