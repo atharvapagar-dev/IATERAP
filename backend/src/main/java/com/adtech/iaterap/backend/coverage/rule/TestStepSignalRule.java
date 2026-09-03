@@ -3,6 +3,7 @@ package com.adtech.iaterap.backend.coverage.rule;
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.entity.TestStep;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;

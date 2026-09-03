@@ -255,6 +255,19 @@ public class TestProcedureService {
         }
     }
 
+    // ---------- review queue (AI-191 / T8-B1) ----------
+
+    /**
+     * Returns all TestProcedures currently awaiting review (approval_status = IN_REVIEW).
+     * Uses the partial index on (approval_status) WHERE IN_REVIEW for efficient querying.
+     * @return List of procedures in IN_REVIEW state with their test steps.
+     */
+    public List<TestProcedureResponse> getReviewQueue() {
+        return testProcedureRepository.findByApprovalStatus(ApprovalState.IN_REVIEW.name()).stream()
+                .map(p -> TestProcedureResponse.fromEntity(p, orderedSteps(p)))
+                .toList();
+    }
+
     // ---------- rollback (AI-187 / T7-B3) ----------
 
     /**

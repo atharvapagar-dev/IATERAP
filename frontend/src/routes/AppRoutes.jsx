@@ -41,6 +41,7 @@ import AuditLogListPage from "../pages/AuditLogListPage";
 import TestProcedureListPage from "../pages/TestProcedureListPage";
 import TestProcedureCreatePage from "../pages/TestProcedureCreatePage";
 import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
+import ReviewQueuePage from "../pages/ReviewQueuePage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -340,6 +341,24 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ProcedureBuilderPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/procedures/review-queue"
+                element={
+                    <ProtectedRoute>
+                        <ReviewQueuePage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/procedures/review-queue/:procedureId"
+                element={
+                    <ProtectedRoute>
+                        <ReviewQueuePage />
                     </ProtectedRoute>
                 }
             />

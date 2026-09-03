@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  // Keep the API host aligned with the local development server URL. Using
+  // the loopback address avoids localhost resolving to IPv6 on some machines.
+  baseURL: "http://127.0.0.1:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
