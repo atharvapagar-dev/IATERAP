@@ -65,6 +65,9 @@ export default function ManagementLayout({
                     <Link to="/audit-logs" style={linkStyle}>
                         Audit Log
                     </Link>
+                    <Link to="/admin/rules" style={linkStyle}>
+                        Rule Management
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>

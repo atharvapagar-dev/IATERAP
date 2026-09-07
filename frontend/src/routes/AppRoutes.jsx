@@ -42,6 +42,7 @@ import TestProcedureListPage from "../pages/TestProcedureListPage";
 import TestProcedureCreatePage from "../pages/TestProcedureCreatePage";
 import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
 import ReviewQueuePage from "../pages/ReviewQueuePage";
+import AdminRuleConfigurationPage from "../pages/AdminRuleConfigurationPage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -368,6 +369,15 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <AuditLogListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/rules"
+                element={
+                    <ProtectedRoute>
+                        <AdminRuleConfigurationPage />
                     </ProtectedRoute>
                 }
             />

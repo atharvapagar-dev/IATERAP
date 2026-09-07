@@ -2,6 +2,9 @@ package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
 import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
+import com.adtech.iaterap.backend.coverage.rule.RuleEngine;
+import com.adtech.iaterap.backend.coverage.rule.RuleCategory;
+import com.adtech.iaterap.backend.coverage.rule.RuleResult;
 import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.ProcedureHistory;
 import com.adtech.iaterap.backend.entity.TestProcedure;
@@ -24,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +49,7 @@ class SubmitForReviewServiceTest {
     @Mock private SignalLibraryRepository signalLibraryRepository;
     @Mock private ProtocolTagRepository protocolTagRepository;
     @Mock private FaultTemplateRepository faultTemplateRepository;
+    @Mock private RuleEngine ruleEngine;
 
     private TestProcedureService service;
 
@@ -114,6 +119,33 @@ class SubmitForReviewServiceTest {
         assertThatThrownBy(() -> service.submitForReview(1L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not bound to any");
+
+        assertThat(procedure.getApprovalStatus()).isEqualTo("DRAFT");
+        verify(testProcedureRepository, never()).save(procedure);
+    }
+
+    @Test
+    void structuralRuleFailureRejectsSubmissionBeforeStateTransition() {
+        service = new TestProcedureService(
+                testProcedureRepository, testStepRepository, procedureHistoryRepository,
+                lruRepository, interfaceRepository, connectorRepository,
+                signalLibraryRepository, protocolTagRepository, faultTemplateRepository,
+                new ObjectMapper().findAndRegisterModules(), null, ruleEngine);
+        TestProcedure procedure = procedure(1L, "DRAFT");
+        TestStep step = boundStep(10L, procedure);
+        when(testProcedureRepository.findById(1L)).thenReturn(Optional.of(procedure));
+        when(testStepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(1L))
+                .thenReturn(List.of(step));
+        when(ruleEngine.evaluate(procedure, procedure.getLru(), List.of(step))).thenReturn(Map.of(
+                "STRUCT-TEST-STEP-SIGNAL",
+                RuleResult.fail("Every Test Step must reference a valid Signal for the procedure LRU")
+                        .withMetadata("STRUCT-TEST-STEP-SIGNAL", RuleCategory.STRUCTURAL)
+        ));
+
+        assertThatThrownBy(() -> service.submitForReview(1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("STRUCT-TEST-STEP-SIGNAL")
+                .hasMessageContaining("valid Signal");
 
         assertThat(procedure.getApprovalStatus()).isEqualTo("DRAFT");
         verify(testProcedureRepository, never()).save(procedure);

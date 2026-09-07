@@ -331,6 +331,30 @@ textarea {
     padding: 0.55rem 0.8rem;
 }
 
+.rule-management__table-wrap {
+    overflow-x: auto;
+}
+
+.rule-management__priority-form {
+    display: flex;
+    gap: 8px;
+    min-width: 170px;
+}
+
+.rule-management__priority-form input {
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+}
+
+.rule-management__priority-form button {
+    padding: 0.55rem 0.8rem;
+}
+
+.rule-management__error {
+    color: var(--danger);
+    margin: 0;
+}
+
 .empty-state {
     border: 1px dashed var(--border);
     border-radius: var(--radius);

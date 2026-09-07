@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 /** Structural rule ensuring every step references a signal from the procedure LRU. */
 @Component
