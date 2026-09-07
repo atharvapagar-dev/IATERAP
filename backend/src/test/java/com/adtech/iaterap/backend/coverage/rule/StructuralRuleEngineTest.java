@@ -33,4 +33,28 @@ class StructuralRuleEngineTest {
         assertEquals(List.of("STRUCT-1"), results.keySet().stream().toList());
         assertFalse(coverageCalled.get());
     }
+
+    @Test
+    void runsNonStructuralRulesWhenAllStructuralRulesPass() {
+        AtomicBoolean coverageCalled = new AtomicBoolean();
+        EngineeringRule structural = new EngineeringRule() {
+            @Override public RuleResult evaluate(TestProcedure p, Lru l) { return RuleResult.pass("valid"); }
+            @Override public RuleCategory getCategory() { return RuleCategory.STRUCTURAL; }
+            @Override public String getRuleId() { return "STRUCT-1"; }
+        };
+        EngineeringRule coverage = new EngineeringRule() {
+            @Override public RuleResult evaluate(TestProcedure p, Lru l) {
+                coverageCalled.set(true);
+                return RuleResult.pass("covered");
+            }
+            @Override public RuleCategory getCategory() { return RuleCategory.COVERAGE; }
+            @Override public String getRuleId() { return "COVER-1"; }
+        };
+
+        var results = new StructuralRuleEngine(List.of(coverage, structural))
+                .evaluate(new TestProcedure(), new Lru("LRU-1"), null);
+
+        assertEquals(List.of("STRUCT-1", "COVER-1"), results.keySet().stream().toList());
+        assertTrue(coverageCalled.get());
+    }
 }
