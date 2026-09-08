@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS validation_readings (
     recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_validation_reading_step UNIQUE (validation_run_id, test_step_id),
     CONSTRAINT chk_validation_reading_result
-        CHECK (result IN ('MATCH', 'MISMATCH', 'OUTLIER', 'MISSING')),
+        CHECK (result IN ('PENDING', 'MATCH', 'MISMATCH', 'OUTLIER', 'MISSING')),
     CONSTRAINT chk_validation_reading_payload CHECK (
         result = 'MISSING'
         OR observed_value IS NOT NULL
