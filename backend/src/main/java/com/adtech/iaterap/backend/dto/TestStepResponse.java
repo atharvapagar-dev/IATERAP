@@ -18,6 +18,7 @@ public class TestStepResponse {
     private String faultCategoryName;
     private String expectedBehaviour;
     private String expectedRange;
+    private String expectedUnit;
     private String calibrationRequirement;
     private String safetyNotes;
     private String acceptanceCriteria;
@@ -56,6 +57,7 @@ public class TestStepResponse {
         }
         r.expectedBehaviour = s.getExpectedBehaviour();
         r.expectedRange = s.getExpectedRange();
+        r.expectedUnit = s.getExpectedUnit() == null ? null : s.getExpectedUnit().name();
         r.calibrationRequirement = s.getCalibrationRequirement();
         r.safetyNotes = s.getSafetyNotes();
         r.acceptanceCriteria = s.getAcceptanceCriteria();
@@ -97,6 +99,7 @@ public class TestStepResponse {
         r.faultCategoryName = textOrNull(node, "faultCategoryName");
         r.expectedBehaviour = textOrNull(node, "expectedBehaviour");
         r.expectedRange = textOrNull(node, "expectedRange");
+        r.expectedUnit = textOrNull(node, "expectedUnit");
         r.calibrationRequirement = textOrNull(node, "calibrationRequirement");
         r.safetyNotes = textOrNull(node, "safetyNotes");
         r.acceptanceCriteria = textOrNull(node, "acceptanceCriteria");
@@ -140,6 +143,7 @@ public class TestStepResponse {
     public String getFaultCategoryName() { return faultCategoryName; }
     public String getExpectedBehaviour() { return expectedBehaviour; }
     public String getExpectedRange() { return expectedRange; }
+    public String getExpectedUnit() { return expectedUnit; }
     public String getCalibrationRequirement() { return calibrationRequirement; }
     public String getSafetyNotes() { return safetyNotes; }
     public String getAcceptanceCriteria() { return acceptanceCriteria; }

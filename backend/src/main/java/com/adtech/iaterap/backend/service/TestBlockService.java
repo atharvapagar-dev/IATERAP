@@ -64,6 +64,7 @@ public class TestBlockService {
         TestBlock block = new TestBlock(request.getName(), request.getDescription());
         block.setExpectedBehaviour(step.getExpectedBehaviour());
         block.setExpectedRange(step.getExpectedRange());
+        block.setExpectedUnit(step.getExpectedUnit());
         block.setCalibrationRequirement(step.getCalibrationRequirement());
         block.setSafetyNotes(step.getSafetyNotes());
         block.setAcceptanceCriteria(step.getAcceptanceCriteria());
@@ -105,6 +106,7 @@ public class TestBlockService {
         newStep.setFaultCategoryId(request.getFaultCategoryId());
         newStep.setExpectedBehaviour(block.getExpectedBehaviour());
         newStep.setExpectedRange(block.getExpectedRange());
+        newStep.setExpectedUnit(block.getExpectedUnit());
         newStep.setCalibrationRequirement(block.getCalibrationRequirement());
         newStep.setSafetyNotes(block.getSafetyNotes());
         newStep.setAcceptanceCriteria(block.getAcceptanceCriteria());
@@ -146,6 +148,10 @@ public class TestBlockService {
         r.setFaultCategoryId(s.getFaultCategoryId());
         r.setExpectedBehaviour(s.getExpectedBehaviour());
         r.setExpectedRange(s.getExpectedRange());
+        if (s.getExpectedUnit() != null) {
+            r.setExpectedUnit(com.adtech.iaterap.backend.validation.EngineeringUnit
+                    .valueOf(s.getExpectedUnit()));
+        }
         r.setCalibrationRequirement(s.getCalibrationRequirement());
         r.setSafetyNotes(s.getSafetyNotes());
         r.setAcceptanceCriteria(s.getAcceptanceCriteria());

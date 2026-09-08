@@ -71,6 +71,7 @@ public class VersionComparisonService {
             new FieldSpec("faultCategoryName", TestStepResponse::getFaultCategoryName),
             new FieldSpec("expectedBehaviour", TestStepResponse::getExpectedBehaviour),
             new FieldSpec("expectedRange", TestStepResponse::getExpectedRange),
+            new FieldSpec("expectedUnit", TestStepResponse::getExpectedUnit),
             new FieldSpec("calibrationRequirement", TestStepResponse::getCalibrationRequirement),
             new FieldSpec("safetyNotes", TestStepResponse::getSafetyNotes),
             new FieldSpec("acceptanceCriteria", TestStepResponse::getAcceptanceCriteria),

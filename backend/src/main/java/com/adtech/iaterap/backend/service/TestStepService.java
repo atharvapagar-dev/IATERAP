@@ -62,6 +62,7 @@ public class TestStepService {
         existing.setFaultCategory(incoming.getFaultCategory());
         existing.setExpectedBehaviour(incoming.getExpectedBehaviour());
         existing.setExpectedRange(incoming.getExpectedRange());
+        existing.setExpectedUnit(incoming.getExpectedUnit());
         existing.setCalibrationRequirement(incoming.getCalibrationRequirement());
         existing.setSafetyNotes(incoming.getSafetyNotes());
         existing.setAcceptanceCriteria(incoming.getAcceptanceCriteria());

@@ -389,6 +389,10 @@ public class TestProcedureService {
 
             step.setExpectedBehaviour(snapshotStep.getExpectedBehaviour());
             step.setExpectedRange(snapshotStep.getExpectedRange());
+            if (snapshotStep.getExpectedUnit() != null) {
+                step.setExpectedUnit(com.adtech.iaterap.backend.validation.EngineeringUnit
+                        .valueOf(snapshotStep.getExpectedUnit()));
+            }
             step.setCalibrationRequirement(snapshotStep.getCalibrationRequirement());
             step.setSafetyNotes(snapshotStep.getSafetyNotes());
             step.setAcceptanceCriteria(snapshotStep.getAcceptanceCriteria());
@@ -552,6 +556,7 @@ public class TestProcedureService {
 
             step.setExpectedBehaviour(sr.getExpectedBehaviour());
             step.setExpectedRange(sr.getExpectedRange());
+            step.setExpectedUnit(sr.getExpectedUnit());
             step.setCalibrationRequirement(sr.getCalibrationRequirement());
             step.setSafetyNotes(sr.getSafetyNotes());
             step.setAcceptanceCriteria(sr.getAcceptanceCriteria());
