@@ -37,4 +37,11 @@ jobs:
 
       - name: Run backend test suite
         working-directory: backend
+        env:
+          # The job runs directly on the GitHub-hosted runner, so the mapped
+          # service port is reached through localhost rather than the service
+          # container hostname.
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/iaterap
+          SPRING_DATASOURCE_USERNAME: iaterap
+          SPRING_DATASOURCE_PASSWORD: iaterap123
         run: ./mvnw clean test
