@@ -44,4 +44,8 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/iaterap
           SPRING_DATASOURCE_USERNAME: iaterap
           SPRING_DATASOURCE_PASSWORD: iaterap123
-        run: ./mvnw clean test
+        run: >-
+          ./mvnw clean test
+          -Dspring.datasource.url=jdbc:postgresql://localhost:5432/iaterap
+          -Dspring.datasource.username=iaterap
+          -Dspring.datasource.password=iaterap123
