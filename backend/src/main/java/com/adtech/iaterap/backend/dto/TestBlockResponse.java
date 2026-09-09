@@ -11,6 +11,7 @@ public class TestBlockResponse {
     private String description;
     private String expectedBehaviour;
     private String expectedRange;
+    private String expectedUnit;
     private String calibrationRequirement;
     private String safetyNotes;
     private String acceptanceCriteria;
@@ -31,6 +32,7 @@ public class TestBlockResponse {
         r.description = b.getDescription();
         r.expectedBehaviour = b.getExpectedBehaviour();
         r.expectedRange = b.getExpectedRange();
+        r.expectedUnit = b.getExpectedUnit() == null ? null : b.getExpectedUnit().name();
         r.calibrationRequirement = b.getCalibrationRequirement();
         r.safetyNotes = b.getSafetyNotes();
         r.acceptanceCriteria = b.getAcceptanceCriteria();
@@ -51,6 +53,7 @@ public class TestBlockResponse {
     public String getDescription() { return description; }
     public String getExpectedBehaviour() { return expectedBehaviour; }
     public String getExpectedRange() { return expectedRange; }
+    public String getExpectedUnit() { return expectedUnit; }
     public String getCalibrationRequirement() { return calibrationRequirement; }
     public String getSafetyNotes() { return safetyNotes; }
     public String getAcceptanceCriteria() { return acceptanceCriteria; }

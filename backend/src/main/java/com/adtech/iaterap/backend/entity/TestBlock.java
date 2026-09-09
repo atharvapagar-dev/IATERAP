@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.adtech.iaterap.backend.validation.EngineeringUnit;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,10 @@ public class TestBlock {
 
     @Column(name = "expected_range")
     private String expectedRange;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "expected_unit", length = 32)
+    private EngineeringUnit expectedUnit;
 
     @Column(name = "calibration_requirement", length = 500)
     private String calibrationRequirement;
@@ -97,6 +102,8 @@ public class TestBlock {
     public void setExpectedBehaviour(String v) { this.expectedBehaviour = v; }
     public String getExpectedRange() { return expectedRange; }
     public void setExpectedRange(String v) { this.expectedRange = v; }
+    public EngineeringUnit getExpectedUnit() { return expectedUnit; }
+    public void setExpectedUnit(EngineeringUnit v) { this.expectedUnit = v; }
     public String getCalibrationRequirement() { return calibrationRequirement; }
     public void setCalibrationRequirement(String v) { this.calibrationRequirement = v; }
     public String getSafetyNotes() { return safetyNotes; }

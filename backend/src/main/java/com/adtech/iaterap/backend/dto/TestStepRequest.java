@@ -1,5 +1,6 @@
 package com.adtech.iaterap.backend.dto;
 
+import com.adtech.iaterap.backend.validation.EngineeringUnit;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -31,6 +32,7 @@ public class TestStepRequest {
     private String expectedBehaviour;
 
     private String expectedRange;
+    private EngineeringUnit expectedUnit;
     private String calibrationRequirement;
     private String safetyNotes;
 
@@ -67,6 +69,8 @@ public class TestStepRequest {
     public void setExpectedBehaviour(String v) { this.expectedBehaviour = v; }
     public String getExpectedRange() { return expectedRange; }
     public void setExpectedRange(String v) { this.expectedRange = v; }
+    public EngineeringUnit getExpectedUnit() { return expectedUnit; }
+    public void setExpectedUnit(EngineeringUnit v) { this.expectedUnit = v; }
     public String getCalibrationRequirement() { return calibrationRequirement; }
     public void setCalibrationRequirement(String v) { this.calibrationRequirement = v; }
     public String getSafetyNotes() { return safetyNotes; }
