@@ -6,8 +6,9 @@ import org.springframework.stereotype.Component;
 @Component
 public final class FunctionalCoverageRule extends AbstractCoverageCategoryRule {
     public FunctionalCoverageRule() {
-        super("COVERAGE-FUNCTIONAL", "Functional elements represented by test steps", step -> step != null && hasText(step.getExpectedBehaviour()));
+        super("COVERAGE-FUNCTIONAL", "Functional coverage");
     }
-
-    private static boolean hasText(String value) { return value != null && !value.isBlank(); }
+    @Override public RuleResult evaluate(com.adtech.iaterap.backend.entity.TestProcedure procedure, com.adtech.iaterap.backend.entity.Lru lru, java.util.List<com.adtech.iaterap.backend.entity.TestStep> steps) {
+        return unavailable("No LRU-scoped Functional catalog or Test Step Functional reference exists");
+    }
 }

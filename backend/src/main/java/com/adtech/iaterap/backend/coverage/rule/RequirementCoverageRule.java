@@ -6,8 +6,9 @@ import org.springframework.stereotype.Component;
 @Component
 public final class RequirementCoverageRule extends AbstractCoverageCategoryRule {
     public RequirementCoverageRule() {
-        super("COVERAGE-REQUIREMENT", "Requirement elements represented by test steps", step -> step != null && hasText(step.getAcceptanceCriteria()));
+        super("COVERAGE-REQUIREMENT", "Requirement coverage");
     }
-
-    private static boolean hasText(String value) { return value != null && !value.isBlank(); }
+    @Override public RuleResult evaluate(com.adtech.iaterap.backend.entity.TestProcedure procedure, com.adtech.iaterap.backend.entity.Lru lru, java.util.List<com.adtech.iaterap.backend.entity.TestStep> steps) {
+        return unavailable("No LRU-scoped Requirement catalog or Test Step Requirement reference exists");
+    }
 }

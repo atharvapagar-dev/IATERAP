@@ -1,40 +1,54 @@
 package com.adtech.iaterap.backend.coverage.rule;
 
-import com.adtech.iaterap.backend.entity.TestProcedure;
-import com.adtech.iaterap.backend.entity.TestStep;
+import com.adtech.iaterap.backend.entity.*;
+import com.adtech.iaterap.backend.repository.*;
 import org.junit.jupiter.api.Test;
-
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+/** Permanent hand-calculated fixtures for the distinct defined-element formula. */
 class CoverageCategoryRulesTest {
-    @Test
-    void exposesAllSixCoverageCategoriesWithStructuredPercentages() {
-        List<EngineeringRule> rules = List.of(
-                new InterfaceCoverageRule(), new SignalCoverageRule(),
-                new RequirementCoverageRule(), new FunctionalCoverageRule(),
-                new FaultCoverageRule(), new FmeaCoverageRule());
-
-        assertEquals(6, rules.size());
-        assertEquals(List.of(
-                "COVERAGE-INTERFACE", "COVERAGE-SIGNAL", "COVERAGE-REQUIREMENT",
-                "COVERAGE-FUNCTIONAL", "COVERAGE-FAULT", "COVERAGE-FMEA"),
-                rules.stream().map(EngineeringRule::getRuleId).toList());
-
-        TestStep referenced = new TestStep();
-        referenced.setAcceptanceCriteria("Requirement");
-        referenced.setExpectedBehaviour("Function");
-        referenced.setSafetyNotes("FMEA branch evidence");
-        TestStep missing = new TestStep();
-
-        RuleResult result = new RequirementCoverageRule().evaluate(
-                new TestProcedure(), null, List.of(referenced, missing));
-
-        assertTrue(result.isPassed());
-        assertEquals(1L, result.getDetails().get("referencedElements"));
-        assertEquals(2, result.getDetails().get("totalElements"));
-        assertEquals(50.0, result.getDetails().get("percentage"));
+    private final Lru lru = lru(1L);
+    @Test void interfacePartialCoverageCountsDuplicateReferencesOnce() {
+        InterfaceRepository repo = mock(InterfaceRepository.class); Interface a = iface(10L), b = iface(11L), c = iface(12L);
+        when(repo.findByLruId(1L)).thenReturn(List.of(a,b,c));
+        assertMeasured(new InterfaceCoverageRule(repo).evaluate(new TestProcedure(), lru, List.of(step(a),step(a),step(b))), 2, 3, "66.67");
     }
+    @Test void signalFullyCoveredAndFullyUncoveredFixturesUseDefinedElements() {
+        SignalLibraryRepository repo = mock(SignalLibraryRepository.class); SignalLibrary a = signal(20L), b = signal(21L);
+        when(repo.findByLruId(1L)).thenReturn(List.of(a,b)); SignalCoverageRule rule = new SignalCoverageRule(repo);
+        assertMeasured(rule.evaluate(new TestProcedure(), lru, List.of(signalStep(a),signalStep(b))), 2, 2, "100.00");
+        assertMeasured(rule.evaluate(new TestProcedure(), lru, List.of(new TestStep())), 0, 2, "0.00");
+    }
+    @Test void faultPartialCoverageUsesFaultTemplateReferences() {
+        FaultTemplateRepository repo = mock(FaultTemplateRepository.class); FaultTemplate a=fault(30L), b=fault(31L), c=fault(32L), foreign=fault(99L);
+        when(repo.findByLruId(1L)).thenReturn(List.of(a,b,c));
+        assertMeasured(new FaultCoverageRule(repo).evaluate(new TestProcedure(), lru, List.of(faultStep(a),faultStep(a),faultStep(foreign))), 1, 3, "33.33");
+    }
+    @Test void fmeaCoverageDerivesAllMappedBranchesFromReferencedFaultTemplate() {
+        FmeaBranchMappingRepository repo = mock(FmeaBranchMappingRepository.class); FaultTemplate covered=fault(40L), uncovered=fault(41L);
+        when(repo.findByLruId(1L)).thenReturn(List.of(mapping(50L,covered),mapping(51L,covered),mapping(52L,uncovered)));
+        assertMeasured(new FmeaCoverageRule(repo).evaluate(new TestProcedure(), lru, List.of(faultStep(covered),faultStep(covered))), 2, 3, "66.67");
+    }
+    @Test void zeroElementAndRequirementFunctionalAreExplicitlyUnavailable() {
+        InterfaceRepository repo = mock(InterfaceRepository.class); when(repo.findByLruId(1L)).thenReturn(List.of());
+        RuleResult zero = new InterfaceCoverageRule(repo).evaluate(new TestProcedure(),lru,List.of());
+        assertNull(zero.getDetails().get("percentage")); assertEquals(0,zero.getDetails().get("totalElements"));
+        for (RuleResult result : List.of(new RequirementCoverageRule().evaluate(new TestProcedure(),lru,List.of()),new FunctionalCoverageRule().evaluate(new TestProcedure(),lru,List.of()))) {
+            assertFalse((Boolean) result.getDetails().get("measurable")); assertNull(result.getDetails().get("percentage"));
+        }
+    }
+    private static void assertMeasured(RuleResult r,int referenced,int total,String percentage) { assertTrue(r.isPassed()); assertEquals(referenced,r.getDetails().get("referencedElements")); assertEquals(total,r.getDetails().get("totalElements")); assertEquals(new BigDecimal(percentage),r.getDetails().get("percentage")); }
+    private static TestStep step(Interface v) { TestStep s=new TestStep();s.setInterfaceEntity(v);return s; }
+    private static TestStep signalStep(SignalLibrary v) { TestStep s=new TestStep();s.setSignalLibrary(v);return s; }
+    private static TestStep faultStep(FaultTemplate v) { TestStep s=new TestStep();s.setFaultCategory(v);return s; }
+    private static Lru lru(Long id) { Lru v=new Lru("LRU");id(v,id);return v; }
+    private static Interface iface(Long id) { Interface v=new Interface();id(v,id);return v; }
+    private static SignalLibrary signal(Long id) { SignalLibrary v=new SignalLibrary();id(v,id);return v; }
+    private static FaultTemplate fault(Long id) { FaultTemplate v=new FaultTemplate();id(v,id);return v; }
+    private static FmeaBranchMapping mapping(Long id,FaultTemplate fault) { FmeaBranchMapping v=new FmeaBranchMapping();id(v,id);v.setFaultTemplate(fault);return v; }
+    private static void id(Object v,Long id) { try { Field f=v.getClass().getDeclaredField("id");f.setAccessible(true);f.set(v,id); } catch (ReflectiveOperationException e) { throw new AssertionError(e); } }
 }

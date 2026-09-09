@@ -1,83 +1,53 @@
 package com.adtech.iaterap.backend.coverage;
 
+import com.adtech.iaterap.backend.coverage.rule.RuleCategory;
 import com.adtech.iaterap.backend.coverage.rule.RuleResult;
+import com.adtech.iaterap.backend.entity.RuleConfiguration;
+import com.adtech.iaterap.backend.repository.RuleConfigurationRepository;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class CoverageEngineTest {
-    @Test
-    void calculatesWeightedCompositeUsingAllSixCategories() {
-        Map<String, RuleResult> results = new LinkedHashMap<>();
-        CoverageEngine.getWeights().keySet().forEach(category ->
-                results.put(category, RuleResult.pass("ok", Map.of("percentage", score(category)))));
+    private static final List<String> IDS = List.of("COVERAGE-FAULT", "COVERAGE-FMEA", "COVERAGE-REQUIREMENT", "COVERAGE-INTERFACE", "COVERAGE-SIGNAL", "COVERAGE-FUNCTIONAL");
 
-        CoverageScore score = CoverageEngine.calculate(results);
-
-        assertEquals(65.0, score.getCompositeScore());
-        assertEquals(100.0, score.getCategoryScores().get("COVERAGE-FAULT"));
-        assertEquals(0.0, score.getCategoryScores().get("COVERAGE-FUNCTIONAL"));
+    @Test void calculatesCompositeUsingConfiguredRuntimeWeights() {
+        RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
+        when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE)).thenReturn(configs("25", "20", "20", "15", "10", "10"));
+        CoverageScore score = engine(repository).calculate(results(80, 50, 100, 0, 25, 75));
+        assertEquals(60.0, score.getCompositeScore()); // 80*.25 + 50*.20 + 100*.20 + 0*.15 + 25*.10 + 75*.10
+        assertTrue(score.getThresholdResults().get("COVERAGE-FAULT"));
     }
 
-    @Test
-    void rejectsIncompleteCategoryResults() {
-        assertThrows(IllegalStateException.class, () -> CoverageEngine.calculate(Map.of()));
+    @Test void changingRuntimeWeightsChangesCompositeWithoutCodeChanges() {
+        RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
+        when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE)).thenReturn(configs("100", "0", "0", "0", "0", "0")).thenReturn(configs("0", "100", "0", "0", "0", "0"));
+        assertEquals(80.0, engine(repository).calculate(results(80, 50, 100, 0, 25, 75)).getCompositeScore());
+        assertEquals(50.0, engine(repository).calculate(results(80, 50, 100, 0, 25, 75)).getCompositeScore());
     }
 
-    @Test
-    void matchesHandComputedMixedCoverageValue() {
-        Map<String, Double> percentages = Map.of(
-                "COVERAGE-FAULT", 80.0,
-                "COVERAGE-FMEA", 50.0,
-                "COVERAGE-REQUIREMENT", 100.0,
-                "COVERAGE-INTERFACE", 0.0,
-                "COVERAGE-SIGNAL", 25.0,
-                "COVERAGE-FUNCTIONAL", 75.0);
-
-        CoverageScore score = CoverageEngine.calculate(results(percentages));
-
-        // 80*.25 + 50*.20 + 100*.20 + 0*.15 + 25*.10 + 75*.10 = 60
-        assertEquals(60.0, score.getCompositeScore());
-        assertEquals(25.0, score.getCategoryScores().get("COVERAGE-SIGNAL"));
+    @Test void unavailableActiveCategoryMakesCompositeExplicitlyUnavailable() {
+        RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
+        when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE)).thenReturn(configs("25", "20", "20", "15", "10", "10"));
+        CoverageScore score = engine(repository).calculate(results(100, 100, null, 100, 100, null));
+        assertNull(score.getCompositeScore());
+        assertEquals("No catalog", score.getUnavailableReasons().get("COVERAGE-REQUIREMENT"));
     }
 
-    @Test
-    void returnsZeroForZeroElementCategoriesAndFullyUncoveredProcedure() {
-        Map<String, RuleResult> zeroCategoryResults = results(Map.of(
-                "COVERAGE-FAULT", 0.0, "COVERAGE-FMEA", 0.0,
-                "COVERAGE-REQUIREMENT", 0.0, "COVERAGE-INTERFACE", 0.0,
-                "COVERAGE-SIGNAL", 0.0, "COVERAGE-FUNCTIONAL", 0.0));
-
-        CoverageScore score = CoverageEngine.calculate(zeroCategoryResults);
-
-        assertEquals(0.0, score.getCompositeScore());
-        assertTrue(score.getCategoryScores().values().stream().allMatch(value -> value == 0.0));
+    @Test void rejectsInvalidConfiguredWeightTotal() {
+        RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
+        when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE)).thenReturn(configs("25", "20", "20", "15", "10", "9"));
+        assertThrows(IllegalStateException.class, () -> engine(repository).calculate(results(0, 0, 0, 0, 0, 0)));
     }
 
-    @Test
-    void returnsOneHundredForFullyCoveredProcedure() {
-        Map<String, RuleResult> fullResults = results(Map.of(
-                "COVERAGE-FAULT", 100.0, "COVERAGE-FMEA", 100.0,
-                "COVERAGE-REQUIREMENT", 100.0, "COVERAGE-INTERFACE", 100.0,
-                "COVERAGE-SIGNAL", 100.0, "COVERAGE-FUNCTIONAL", 100.0));
-
-        assertEquals(100.0, CoverageEngine.calculate(fullResults).getCompositeScore());
-    }
-
-    private Map<String, RuleResult> results(Map<String, Double> percentages) {
-        Map<String, RuleResult> results = new LinkedHashMap<>();
-        CoverageEngine.getWeights().keySet().forEach(category ->
-                results.put(category, RuleResult.pass("ok", Map.of("percentage", percentages.get(category)))));
-        return results;
-    }
-
-    private double score(String category) {
-        return category.equals("COVERAGE-FAULT") || category.equals("COVERAGE-FMEA")
-                || category.equals("COVERAGE-REQUIREMENT") ? 100.0 : 0.0;
-    }
+    private CoverageEngine engine(RuleConfigurationRepository repository) { return new CoverageEngine(null, new CoverageScoringConfigurationService(repository)); }
+    private List<RuleConfiguration> configs(String... weights) { return java.util.stream.IntStream.range(0, IDS.size()).mapToObj(i -> { RuleConfiguration rule = new RuleConfiguration(IDS.get(i), RuleCategory.COVERAGE, i, IDS.get(i), true); rule.setWeight(new BigDecimal(weights[i])); rule.setThreshold(BigDecimal.ZERO); return rule; }).toList(); }
+    private Map<String, RuleResult> results(Integer... percentages) { Map<String, RuleResult> results = new LinkedHashMap<>(); for (int i = 0; i < IDS.size(); i++) { Integer percentage = percentages[i]; results.put(IDS.get(i), RuleResult.pass("ok", percentage == null ? nullDetails() : Map.of("percentage", percentage))); } return results; }
+    private Map<String, Object> nullDetails() { Map<String, Object> details = new LinkedHashMap<>(); details.put("percentage", null); details.put("reason", "No catalog"); return details; }
 }

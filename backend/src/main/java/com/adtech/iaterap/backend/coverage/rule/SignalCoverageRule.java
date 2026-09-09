@@ -1,11 +1,24 @@
 package com.adtech.iaterap.backend.coverage.rule;
 
 import org.springframework.stereotype.Component;
+import com.adtech.iaterap.backend.repository.SignalLibraryRepository;
+import com.adtech.iaterap.backend.entity.Lru;
+import com.adtech.iaterap.backend.entity.TestProcedure;
+import com.adtech.iaterap.backend.entity.TestStep;
+import com.adtech.iaterap.backend.entity.SignalLibrary;
 
 /** Coverage of steps linked to a Signal Library element. */
 @Component
 public final class SignalCoverageRule extends AbstractCoverageCategoryRule {
-    public SignalCoverageRule() {
-        super("COVERAGE-SIGNAL", "Signal elements referenced by test steps", step -> step != null && step.getSignalLibrary() != null);
+    private final SignalLibraryRepository repository;
+    public SignalCoverageRule(SignalLibraryRepository repository) {
+        super("COVERAGE-SIGNAL", "Signal elements referenced by test steps");
+        this.repository = repository;
+    }
+    @Override public RuleResult evaluate(TestProcedure procedure, Lru lru, java.util.List<TestStep> steps) {
+        if (lru == null || lru.getId() == null) return unavailable("An LRU context is required");
+        java.util.Set<Long> defined = repository.findByLruId(lru.getId()).stream().map(SignalLibrary::getId).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<Long> referenced = (steps == null ? java.util.List.<TestStep>of() : steps).stream().map(TestStep::getSignalLibrary).filter(java.util.Objects::nonNull).map(SignalLibrary::getId).filter(java.util.Objects::nonNull).collect(java.util.stream.Collectors.toSet());
+        return measured(defined, referenced);
     }
 }
