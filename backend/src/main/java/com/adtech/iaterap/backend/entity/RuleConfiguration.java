@@ -4,6 +4,7 @@ import com.adtech.iaterap.backend.coverage.rule.RuleCategory;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "rules_configuration", indexes = {
@@ -30,6 +31,14 @@ public class RuleConfiguration {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /** Optional percentage contribution used only by composite coverage rules. */
+    @Column(precision = 5, scale = 2)
+    private BigDecimal weight;
+
+    /** Optional minimum category-coverage percentage used only by coverage rules. */
+    @Column(precision = 5, scale = 2)
+    private BigDecimal threshold;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -54,6 +63,10 @@ public class RuleConfiguration {
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public void setPriority(Integer priority) { this.priority = priority; }
+    public BigDecimal getWeight() { return weight; }
+    public void setWeight(BigDecimal weight) { this.weight = weight; }
+    public BigDecimal getThreshold() { return threshold; }
+    public void setThreshold(BigDecimal threshold) { this.threshold = threshold; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

@@ -48,6 +48,16 @@ Submit for review -> TestProcedureService -> RuleEngine -> enabled configuration
 
 `rules_configuration` stores one row per stable rule identifier with category, non-negative priority, description, enabled state, and timestamps. `V21__rules_configuration.sql` creates the table, indexes it for priority/execution lookup, and seeds the initial structural Signal rule. `V22__seed_default_rules_configuration.sql` uses an idempotent insert for that default seed, preserving the expected configuration on migrated installations.
 
+## Coverage scoring (Week 10)
+
+`V28__coverage_scoring_configuration.sql` extends the existing `rules_configuration` rows with nullable `weight` and `threshold` percentages; no separate scoring table is used. Default enabled weights are Fault 25%, FMEA 20%, Requirement 20%, Interface 15%, Signal 10%, and Functional 10%. The admin-only `/api/admin/coverage/scoring-config` endpoint updates the six category configurations. Enabled coverage weights must total exactly 100%; invalid values are rejected.
+
+For a measurable category, coverage is `distinct LRU-defined elements referenced by at least one TestStep / total LRU-defined elements * 100`. Interface, Signal, and Fault use their existing TestStep references. FMEA coverage derives defined and covered branches through `TestStep.faultTemplate -> FaultTemplate -> FmeaBranchMapping`; all distinct mapped branches for a referenced fault are covered. Repeated TestStep references do not increase the numerator.
+
+Requirement and Functional are explicitly unavailable: the current schema has no LRU-scoped catalogs or structured TestStep references for either category, so `acceptanceCriteria` and `expectedBehaviour` text are not used as surrogate coverage. A zero-element measurable category is likewise unavailable, not 100%. If any enabled weighted category is unavailable, the composite score is `null` and returns its deterministic reason; disabled categories do not participate. Threshold comparisons are returned per measurable active category.
+
+The unused Test Block advisory is deterministic and non-blocking: shared blocks with `usageCount == 0` are reported for review. No Safety applicability policy is inferred: the domain has no authoritative `safetyRelevant` source, and severity labels are not treated as one.
+
 The JPA `RuleConfiguration` entity, repository, and service are the single persistence path used by both the engine and admin API.
 
 ## Admin configuration

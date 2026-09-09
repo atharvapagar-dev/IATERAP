@@ -6,59 +6,46 @@ import com.adtech.iaterap.backend.entity.Lru;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.entity.TestStep;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Coordinates category rules and calculates the configured composite score. */
+/** Coordinates enabled category rules with live persisted scoring configuration. */
 @Service
 public class CoverageEngine {
-    private static final Map<String, Double> WEIGHTS = Map.of(
-            "COVERAGE-FAULT", 0.25,
-            "COVERAGE-FMEA", 0.20,
-            "COVERAGE-REQUIREMENT", 0.20,
-            "COVERAGE-INTERFACE", 0.15,
-            "COVERAGE-SIGNAL", 0.10,
-            "COVERAGE-FUNCTIONAL", 0.10);
-
     private final RuleEngine ruleEngine;
-
-    public CoverageEngine(RuleEngine ruleEngine) {
+    private final CoverageScoringConfigurationService scoringConfigurationService;
+    public CoverageEngine(RuleEngine ruleEngine, CoverageScoringConfigurationService scoringConfigurationService) {
         this.ruleEngine = ruleEngine;
+        this.scoringConfigurationService = scoringConfigurationService;
     }
-
     public CoverageScore evaluate(TestProcedure procedure, Lru lru, List<TestStep> steps) {
         return calculate(ruleEngine.evaluate(procedure, lru, steps));
     }
-
-    /** Calculates a score from category-rule results; exposed for deterministic unit testing. */
-    public static CoverageScore calculate(Map<String, RuleResult> results) {
+    public CoverageScore calculate(Map<String, RuleResult> results) {
         Map<String, Double> scores = new LinkedHashMap<>();
-        double composite = 0.0;
-        for (String category : WEIGHTS.keySet()) {
-            RuleResult result = results == null ? null : results.get(category);
-            if (result == null) {
-                throw new IllegalStateException("Missing coverage category result: " + category);
-            }
+        Map<String, Boolean> thresholds = new LinkedHashMap<>();
+        Map<String, String> unavailable = new LinkedHashMap<>();
+        BigDecimal composite = BigDecimal.ZERO;
+        boolean complete = true;
+        for (CoverageScoringConfigurationService.ScoringRule config : scoringConfigurationService.activeCoverageRules()) {
+            RuleResult result = results == null ? null : results.get(config.ruleId());
+            if (result == null) throw new IllegalStateException("Missing enabled coverage rule result: " + config.ruleId());
             Object percentage = result.getDetails().get("percentage");
             if (!(percentage instanceof Number number)) {
-                throw new IllegalStateException("Coverage result has no percentage: " + category);
+                complete = false;
+                scores.put(config.ruleId(), null);
+                thresholds.put(config.ruleId(), null);
+                unavailable.put(config.ruleId(), String.valueOf(result.getDetails().get("reason")));
+                continue;
             }
-            double score = number.doubleValue();
-            scores.put(category, round(score));
-            composite += score * WEIGHTS.get(category);
+            BigDecimal score = new BigDecimal(number.toString()).setScale(2, RoundingMode.HALF_UP);
+            scores.put(config.ruleId(), score.doubleValue());
+            thresholds.put(config.ruleId(), score.compareTo(config.threshold()) >= 0);
+            composite = composite.add(score.multiply(config.weight()).movePointLeft(2));
         }
-        return new CoverageScore(scores, round(composite));
-    }
-
-    public static Map<String, Double> getWeights() {
-        return WEIGHTS;
-    }
-
-    private static double round(double value) {
-        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return new CoverageScore(scores, complete ? composite.setScale(2, RoundingMode.HALF_UP).doubleValue() : null, thresholds, unavailable);
     }
 }
