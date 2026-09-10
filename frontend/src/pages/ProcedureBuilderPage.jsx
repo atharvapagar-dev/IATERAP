@@ -13,6 +13,7 @@ import { signalLibraryService } from "../services/signalLibraryService";
 import { protocolTagService } from "../services/protocolTagService";
 import { faultTemplateService } from "../services/faultTemplateService";
 import { versionComparisonService } from "../services/versionComparisonService";
+import CoverageSummaryCard from "../components/CoverageSummaryCard";
 
 let tempKeyCounter = 0;
 
@@ -53,6 +54,10 @@ export default function ProcedureBuilderPage() {
     // AI-187 / T7-B3: rollback creates a new revision and preserves history.
     const [rollingBackVersion, setRollingBackVersion] = useState(null);
     const [rollbackError, setRollbackError] = useState("");
+
+    const [coverage, setCoverage] = useState(null);
+    const [coverageLoading, setCoverageLoading] = useState(false);
+    const [coverageError, setCoverageError] = useState("");
 
     const loadAll = useCallback(async () => {
         try {
@@ -357,6 +362,24 @@ export default function ProcedureBuilderPage() {
         }
     };
 
+    const handleEvaluateCoverage = async () => {
+        if (!isEditing) return;
+        setCoverageLoading(true);
+        setCoverageError("");
+        try {
+            const response = await testProcedureService.getCoverage(id);
+            setCoverage(response.data);
+        } catch (coverageRequestError) {
+            setCoverage(null);
+            setCoverageError(
+                coverageRequestError?.response?.data?.message ||
+                "Unable to evaluate coverage for this procedure. Save the revision and try again."
+            );
+        } finally {
+            setCoverageLoading(false);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -504,6 +527,15 @@ export default function ProcedureBuilderPage() {
                     lruId={lruId}
                     blocks={blocks}
                     onInserted={loadAll}
+                />
+            ) : null}
+
+            {isEditing ? (
+                <CoverageSummaryCard
+                    coverage={coverage}
+                    loading={coverageLoading}
+                    error={coverageError}
+                    onRefresh={handleEvaluateCoverage}
                 />
             ) : null}
 

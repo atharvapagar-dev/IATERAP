@@ -37,6 +37,10 @@ export const testProcedureService = {
         return api.get(`/procedures/${procedureId}/steps`);
     },
 
+    getCoverage(procedureId) {
+        return api.get(`/procedures/${procedureId}/coverage`);
+    },
+
     addStep(procedureId, step) {
         return api.post(`/procedures/${procedureId}/steps`, step);
     },
