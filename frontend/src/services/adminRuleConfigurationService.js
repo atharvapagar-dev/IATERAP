@@ -16,4 +16,12 @@ export const adminRuleConfigurationService = {
             priority,
         });
     },
+
+    getCoverageScoringConfiguration() {
+        return api.get("/admin/coverage/scoring-config");
+    },
+
+    updateCoverageScoringConfiguration(rules) {
+        return api.put("/admin/coverage/scoring-config", { rules });
+    },
 };
