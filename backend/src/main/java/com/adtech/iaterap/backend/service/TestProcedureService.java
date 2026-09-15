@@ -64,6 +64,7 @@ public class TestProcedureService {
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
     private final RuleEngine ruleEngine;
+    private ProcedureSnapshotService procedureSnapshotService;
     private ApprovalStateMachine approvalStateMachine;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -94,6 +95,11 @@ public class TestProcedureService {
         this.auditService = auditService;
         this.ruleEngine = ruleEngine;
         this.approvalStateMachine = new ApprovalStateMachine();
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setProcedureSnapshotService(ProcedureSnapshotService procedureSnapshotService) {
+        this.procedureSnapshotService = procedureSnapshotService;
     }
 
     /** Kept for existing callers and isolated tests without a rule engine. */
@@ -223,6 +229,10 @@ public class TestProcedureService {
         procedure.setUpdatedAt(java.time.LocalDateTime.now());
         testProcedureRepository.save(procedure);
         writeRevision(procedure, procedure.getVersionNumber());
+        if (procedureSnapshotService != null) {
+            // Submission freezes reviewed content and its score atomically with the state transition.
+            procedureSnapshotService.createSubmissionArtifacts(procedure, steps, resolveActor());
+        }
         return TestProcedureResponse.fromEntity(procedure, steps);
     }
 

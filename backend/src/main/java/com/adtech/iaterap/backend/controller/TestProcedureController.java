@@ -4,6 +4,9 @@ import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
 import com.adtech.iaterap.backend.service.TestProcedureService;
+import com.adtech.iaterap.backend.service.ProcedureSnapshotService;
+import com.adtech.iaterap.backend.entity.ProcedureSnapshot;
+import com.adtech.iaterap.backend.entity.CoverageReport;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,9 +27,11 @@ import java.util.List;
 public class TestProcedureController {
 
     private final TestProcedureService service;
+    private final ProcedureSnapshotService snapshotService;
 
-    public TestProcedureController(TestProcedureService service) {
+    public TestProcedureController(TestProcedureService service, ProcedureSnapshotService snapshotService) {
         this.service = service;
+        this.snapshotService = snapshotService;
     }
 
     @GetMapping
@@ -55,6 +60,16 @@ public class TestProcedureController {
     @PostMapping("/{id}/submit-for-review")
     public TestProcedureResponse submitForReview(@PathVariable Long id) {
         return service.submitForReview(id);
+    }
+
+    @GetMapping("/{id}/snapshots/{versionNumber}")
+    public ProcedureSnapshot getSnapshot(@PathVariable Long id, @PathVariable Integer versionNumber) {
+        return snapshotService.getSnapshot(id, versionNumber);
+    }
+
+    @GetMapping("/{id}/coverage-reports/{versionNumber}")
+    public CoverageReport getCoverageReport(@PathVariable Long id, @PathVariable Integer versionNumber) {
+        return snapshotService.getReport(id, versionNumber);
     }
 
     @GetMapping("/review-queue")
