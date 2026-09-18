@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
+import java.util.Set;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,5 +38,27 @@ class RuleConfigurationSeedVerificationTest {
                 "Every Test Step must reference a valid Signal for the procedure LRU",
                 row.get("description"));
         assertTrue((Boolean) row.get("enabled"));
+    }
+
+    @Test
+    void migrationSeedsAllCoverageRulesWithConfiguredWeightsAndThresholds() {
+        Set<String> ruleIds = Set.copyOf(jdbcTemplate.queryForList(
+                "SELECT rule_id FROM rules_configuration WHERE category = ? ORDER BY rule_id",
+                String.class,
+                "COVERAGE"));
+
+        assertEquals(Set.of(
+                "COVERAGE-INTERFACE",
+                "COVERAGE-SIGNAL",
+                "COVERAGE-REQUIREMENT",
+                "COVERAGE-FUNCTIONAL",
+                "COVERAGE-FAULT",
+                "COVERAGE-FMEA"), ruleIds);
+
+        Map<String, Object> fault = jdbcTemplate.queryForMap(
+                "SELECT weight, threshold FROM rules_configuration WHERE rule_id = ?",
+                "COVERAGE-FAULT");
+        assertEquals(new BigDecimal("25.00"), fault.get("weight"));
+        assertEquals(new BigDecimal("0.00"), fault.get("threshold"));
     }
 }
