@@ -355,6 +355,43 @@ textarea {
     margin: 0;
 }
 
+.rule-management__success {
+    color: #9fc2ad;
+    margin: 0;
+}
+
+.coverage-scoring {
+    display: grid;
+    gap: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 22px;
+}
+
+.coverage-scoring__total {
+    margin: 0;
+    border: 1px solid var(--danger);
+    border-radius: 999px;
+    color: var(--danger);
+    font-weight: 700;
+    padding: 0.45rem 0.75rem;
+}
+
+.coverage-scoring__total--valid {
+    border-color: #78ad8c;
+    color: #9fc2ad;
+}
+
+.coverage-scoring input[type="checkbox"] {
+    width: auto;
+    min-height: 1.1rem;
+    min-width: 1.1rem;
+}
+
+.coverage-scoring input[type="number"] {
+    min-width: 118px;
+    padding: 0.55rem 0.65rem;
+}
+
 .empty-state {
     border: 1px dashed var(--border);
     border-radius: var(--radius);
