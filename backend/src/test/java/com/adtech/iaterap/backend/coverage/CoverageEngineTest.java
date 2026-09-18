@@ -69,7 +69,6 @@ class CoverageEngineTest {
                 .thenReturn(configs("25", "20", "20", "15", "10", "10"));
         return engine(repository);
     }
-
     private CoverageEngine engine(RuleConfigurationRepository repository) { return new CoverageEngine(null, new CoverageScoringConfigurationService(repository)); }
     private List<RuleConfiguration> configs(String... weights) { return java.util.stream.IntStream.range(0, IDS.size()).mapToObj(i -> { RuleConfiguration rule = new RuleConfiguration(IDS.get(i), RuleCategory.COVERAGE, i, IDS.get(i), true); rule.setWeight(new BigDecimal(weights[i])); rule.setThreshold(BigDecimal.ZERO); return rule; }).toList(); }
     private Map<String, RuleResult> results(Integer... percentages) { Map<String, RuleResult> results = new LinkedHashMap<>(); for (int i = 0; i < IDS.size(); i++) { Integer percentage = percentages[i]; results.put(IDS.get(i), RuleResult.pass("ok", percentage == null ? nullDetails() : Map.of("percentage", percentage))); } return results; }
