@@ -62,6 +62,11 @@ public class TestProcedureController {
         return service.submitForReview(id);
     }
 
+    @PostMapping("/{id}/approve")
+    public TestProcedureResponse approve(@PathVariable Long id) {
+        return service.approve(id);
+    }
+
     @GetMapping("/{id}/snapshots/{versionNumber}")
     public ProcedureSnapshot getSnapshot(@PathVariable Long id, @PathVariable Integer versionNumber) {
         return snapshotService.getSnapshot(id, versionNumber);

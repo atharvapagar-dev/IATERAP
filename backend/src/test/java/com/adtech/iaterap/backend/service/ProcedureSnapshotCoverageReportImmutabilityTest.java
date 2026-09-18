@@ -106,6 +106,10 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
         assertThrows(InvalidApprovalTransitionException.class, () -> procedures.submitForReview(procedureId));
         assertEquals(1, snapshots.findAll().stream().filter(s -> procedureId.equals(s.getTestProcedureId())).count());
         assertEquals(1, reports.findAll().stream().filter(r -> procedureId.equals(r.getTestProcedureId())).count());
+
+        TestProcedureResponse approved = procedures.approve(procedureId);
+        assertEquals("APPROVED", approved.getApprovalStatus());
+        assertEquals(frozenReport, artifacts.getReport(procedureId, 2).getReportPayload());
     }
 
     @Test
