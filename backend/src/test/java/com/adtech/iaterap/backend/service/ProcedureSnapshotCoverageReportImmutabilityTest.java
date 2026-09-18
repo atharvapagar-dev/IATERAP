@@ -108,6 +108,30 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
         assertEquals(1, reports.findAll().stream().filter(r -> procedureId.equals(r.getTestProcedureId())).count());
     }
 
+    @Test
+    void deletingProcedure_cascadesToItsSnapshotAndCoverageReport() {
+        Lru lru = lrus.findAll().get(0);
+        iface = interfaces.findByLruId(lru.getId()).get(0);
+        connector = connectors.findByLruId(lru.getId()).get(0);
+        signal = signals.findByLruId(lru.getId()).get(0);
+        ProtocolTag protocol = protocols.findByLruId(lru.getId()).get(0);
+        FaultTemplate fault = faults.findByLruId(lru.getId()).get(0);
+        interfaceName = iface.getName(); connectorName = connector.getName(); signalName = signal.getName(); signalDescription = signal.getDescription();
+
+        procedureId = procedures.save(request(lru, protocol, fault)).getId();
+        procedures.submitForReview(procedureId);
+        assertTrue(snapshots.findByTestProcedureIdAndProcedureVersionNumber(procedureId, 2).isPresent());
+        assertTrue(reports.findByTestProcedureIdAndProcedureVersionNumberAndReportVersion(procedureId, 2, 1).isPresent());
+
+        jdbc.update("DELETE FROM procedure_history WHERE test_procedure_id = ?", procedureId);
+        steps.deleteAll(steps.findByTestProcedureIdOrderByExecutionOrderAsc(procedureId));
+        procedureRepository.deleteById(procedureId);
+
+        assertTrue(snapshots.findByTestProcedureIdAndProcedureVersionNumber(procedureId, 2).isEmpty());
+        assertTrue(reports.findByTestProcedureIdAndProcedureVersionNumberAndReportVersion(procedureId, 2, 1).isEmpty());
+        procedureId = null;
+    }
+
     private TestProcedureRequest request(Lru lru, ProtocolTag protocol, FaultTemplate fault) {
         TestStepRequest step = new TestStepRequest();
         step.setInterfaceId(iface.getId()); step.setConnectorId(connector.getId()); step.setSignalLibraryId(signal.getId()); step.setProtocolTagId(protocol.getId()); step.setFaultCategoryId(fault.getId());
