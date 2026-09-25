@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.exception;
 
 import com.adtech.iaterap.backend.approval.ApprovalState;
 import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
+import com.adtech.iaterap.backend.approval.CoverageThresholdNotMetException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,5 +49,16 @@ class GlobalExceptionHandlerApprovalTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
         assertThat(response.getBody().getMessage()).isEqualTo("Malformed request body.");
+    }
+
+    @Test
+    void unmetCoverageThresholdMapsTo409WithApiErrorBody() {
+        ResponseEntity<ApiError> response = handler.handleCoverageThresholdNotMet(
+                new CoverageThresholdNotMetException(42L, 3, "COVERAGE-FAULT"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(409);
+        assertThat(response.getBody().getMessage()).contains("COVERAGE-FAULT");
     }
 }

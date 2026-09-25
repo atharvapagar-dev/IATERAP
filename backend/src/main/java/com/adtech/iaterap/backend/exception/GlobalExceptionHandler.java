@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.exception;
 
 import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
+import com.adtech.iaterap.backend.approval.CoverageThresholdNotMetException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -126,6 +127,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidApprovalTransitionException.class)
     public ResponseEntity<ApiError> handleInvalidApprovalTransition(
             InvalidApprovalTransitionException exception
+    ) {
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
+    @ExceptionHandler(CoverageThresholdNotMetException.class)
+    public ResponseEntity<ApiError> handleCoverageThresholdNotMet(
+            CoverageThresholdNotMetException exception
     ) {
         ApiError apiError = new ApiError(
                 HttpStatus.CONFLICT.value(),

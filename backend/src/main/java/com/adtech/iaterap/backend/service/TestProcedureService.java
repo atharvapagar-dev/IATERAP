@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.service;
 
 import com.adtech.iaterap.backend.approval.ApprovalState;
 import com.adtech.iaterap.backend.approval.ApprovalStateMachine;
+import com.adtech.iaterap.backend.approval.CoverageThresholdNotMetException;
 import com.adtech.iaterap.backend.coverage.rule.RuleEngine;
 import com.adtech.iaterap.backend.coverage.rule.RuleCategory;
 import com.adtech.iaterap.backend.coverage.rule.RuleResult;
@@ -234,6 +235,58 @@ public class TestProcedureService {
             procedureSnapshotService.createSubmissionArtifacts(procedure, steps, resolveActor());
         }
         return TestProcedureResponse.fromEntity(procedure, steps);
+    }
+
+    // ---------- approval (AI-124 / AI-220) ----------
+
+    /**
+     * Approves an in-review procedure only when the coverage thresholds
+     * persisted in its submission-time report are satisfied. The report is
+     * deliberately not recalculated here: later shared-asset changes must not
+     * alter the decision for the reviewed version.
+     */
+    @Transactional
+    public TestProcedureResponse approve(Long id) {
+        TestProcedure procedure = requireProcedure(id);
+        ApprovalState currentState = ApprovalState.valueOf(procedure.getApprovalStatus());
+        ApprovalState nextState = approvalStateMachine.transition(currentState, ApprovalState.APPROVED);
+
+        assertFrozenCoverageThresholdsMet(procedure);
+
+        procedure.setApprovalStatus(nextState.name());
+        procedure.setUpdatedAt(java.time.LocalDateTime.now());
+        testProcedureRepository.save(procedure);
+        return TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+    }
+
+    private void assertFrozenCoverageThresholdsMet(TestProcedure procedure) {
+        if (procedureSnapshotService == null) {
+            throw new IllegalStateException("Frozen coverage reports are required before approving a procedure.");
+        }
+
+        CoverageReport report = procedureSnapshotService.getReport(
+                procedure.getId(), procedure.getVersionNumber());
+        try {
+            JsonNode thresholds = objectMapper.readTree(report.getReportPayload()).path("thresholdResults");
+            if (!thresholds.isObject()) {
+                throw new IllegalStateException("Frozen coverage report has no threshold results.");
+            }
+            List<String> failedRules = new ArrayList<>();
+            thresholds.fields().forEachRemaining(entry -> {
+                // null is the CoverageEngine's established unavailable/not-applicable result.
+                if (entry.getValue().isBoolean() && !entry.getValue().asBoolean()) {
+                    failedRules.add(entry.getKey());
+                }
+            });
+            if (!failedRules.isEmpty()) {
+                throw new CoverageThresholdNotMetException(
+                        procedure.getId(), procedure.getVersionNumber(), String.join(", ", failedRules));
+            }
+        } catch (CoverageThresholdNotMetException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to read frozen coverage report for approval.", exception);
+        }
     }
 
     private void validateStructuralWellFormedness(TestProcedure procedure, List<TestStep> steps) {
