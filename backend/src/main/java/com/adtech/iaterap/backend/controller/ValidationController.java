@@ -67,6 +67,11 @@ public class ValidationController {
                 .orElseThrow(() -> new ValidationFixtureException("Validation run not found: " + runId));
     }
 
+    @GetMapping("/runs")
+    public List<ValidationRun> getRuns(@RequestParam Long procedureHistoryId) {
+        return runRepository.findByProcedureHistoryIdOrderByUploadedAtDesc(procedureHistoryId);
+    }
+
     @GetMapping("/runs/{runId}/readings")
     public List<ValidationReading> getReadings(@PathVariable Long runId) {
         if (!runRepository.existsById(runId)) {

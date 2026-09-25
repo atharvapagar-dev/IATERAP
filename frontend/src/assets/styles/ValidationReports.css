@@ -1,0 +1,18 @@
+.validation-toolbar { display: grid; gap: 20px; }
+.validation-upload-form { display: grid; grid-template-columns: 1fr 160px 1.3fr auto; gap: 14px; align-items: end; }
+.validation-upload-form label { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.validation-upload-form input, .validation-upload-form select { margin-top: 6px; text-transform: none; }
+.validation-upload-form input[type=file] { padding: .68rem; }
+.validation-actions { display: flex; gap: 8px; }
+.validation-layout { display: grid; grid-template-columns: minmax(230px, .7fr) minmax(0, 1.8fr); gap: 18px; margin-top: 18px; }
+.validation-run-list { display: grid; gap: 8px; }
+.validation-run { display: grid; gap: 3px; text-align: left; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.validation-run span, .validation-run small { color: var(--muted); }
+.validation-run.is-selected { border-color: var(--primary); background: #20313b; }
+.validation-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 24px; }
+.validation-metric { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; background: #151b21; }
+.validation-metric span { display: block; color: var(--muted); font-size: .75rem; text-transform: uppercase; }
+.validation-metric strong { font-size: 1.7rem; }
+.validation-metric--good strong { color: #8bc7a5; }.validation-metric--bad strong { color: var(--danger); }.validation-metric--warn strong { color: #d6ad71; }
+.validation-remediation { border-top: 1px solid var(--border); padding-top: 16px; }.validation-issue { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }.validation-issue p { margin: 4px 0; color: var(--muted); }.validation-issue small { color: var(--muted); }.validation-issue.is-addressed { opacity: .55; }
+@media (max-width: 900px) { .validation-upload-form, .validation-layout { grid-template-columns: 1fr; }.validation-metrics { grid-template-columns: repeat(2, 1fr); } }

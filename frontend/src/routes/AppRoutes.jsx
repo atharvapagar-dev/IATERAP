@@ -44,6 +44,7 @@ import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
 import ReviewQueuePage from "../pages/ReviewQueuePage";
 import AdminRuleConfigurationPage from "../pages/AdminRuleConfigurationPage";
 import CoverageDashboardPage from "../pages/CoverageDashboardPage";
+import ValidationReportsPage from "../pages/ValidationReportsPage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -385,6 +386,10 @@ function AppRoutes() {
             <Route
                 path="/coverage-dashboard"
                 element={<ProtectedRoute><CoverageDashboardPage /></ProtectedRoute>}
+            />
+            <Route
+                path="/validation-reports"
+                element={<ProtectedRoute><ValidationReportsPage /></ProtectedRoute>}
             />
         </Routes>
     );
