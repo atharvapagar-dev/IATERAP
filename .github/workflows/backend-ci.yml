@@ -14,7 +14,6 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          SPRING_PROFILES_ACTIVE: test
           POSTGRES_DB: iaterap
           POSTGRES_USER: iaterap
           POSTGRES_PASSWORD: iaterap123
@@ -39,6 +38,7 @@ jobs:
       - name: Run backend test suite
         working-directory: backend
         env:
+          SPRING_PROFILES_ACTIVE: test
           # The job runs directly on the GitHub-hosted runner, so the mapped
           # service port is reached through localhost rather than the service
           # container hostname.
