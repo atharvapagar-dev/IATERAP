@@ -52,6 +52,12 @@ export default function CoverageSummaryCard({ coverage, loading, error, onRefres
                             );
                         })}
                     </div>
+                    {coverage.gaps?.length ? (
+                        <div className="coverage-gaps">
+                            <h3 className="section-title">Structured gaps</h3>
+                            {coverage.gaps.map((gap) => <div className="coverage-gap" key={`${gap.elementType}-${gap.elementId}`}><strong>{gap.elementType} #{gap.elementId}</strong><span>{gap.description}</span></div>)}
+                        </div>
+                    ) : <p className="helper-text">No uncovered defined elements were detected.</p>}
                 </>
             ) : null}
         </section>

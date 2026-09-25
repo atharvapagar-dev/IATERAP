@@ -205,6 +205,18 @@ textarea {
     color: var(--danger);
 }
 
+.coverage-gaps { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+.coverage-gap { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: .9rem; }
+.coverage-gap span { color: var(--muted); }
+.coverage-table-wrap { overflow-x: auto; }
+.coverage-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+.coverage-table th, .coverage-table td { border-bottom: 1px solid var(--border); padding: 11px 10px; text-align: left; white-space: nowrap; }
+.coverage-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+.coverage-cell { font-weight: 700; }
+.coverage-cell--good { color: #2f8f62; }
+.coverage-cell--low { color: #bd7b2d; }
+.coverage-cell--na { color: var(--muted); }
+
 @media (max-width: 720px) {
     .coverage-summary__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

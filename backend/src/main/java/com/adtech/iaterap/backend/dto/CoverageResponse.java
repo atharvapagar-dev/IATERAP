@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.dto;
 
 import java.util.Map;
+import java.util.List;
 
 /** Read-only coverage result exposed to the Procedure Builder and demo flow. */
 public record CoverageResponse(
@@ -10,5 +11,6 @@ public record CoverageResponse(
         Map<String, Double> weights,
         Double compositeScore,
         Map<String, Boolean> thresholdResults,
-        Map<String, String> unavailableReasons
+        Map<String, String> unavailableReasons,
+        List<CoverageGapResponse> gaps
 ) { }

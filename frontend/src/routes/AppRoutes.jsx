@@ -43,6 +43,7 @@ import TestProcedureCreatePage from "../pages/TestProcedureCreatePage";
 import ProcedureBuilderPage from "../pages/ProcedureBuilderPage";
 import ReviewQueuePage from "../pages/ReviewQueuePage";
 import AdminRuleConfigurationPage from "../pages/AdminRuleConfigurationPage";
+import CoverageDashboardPage from "../pages/CoverageDashboardPage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -380,6 +381,10 @@ function AppRoutes() {
                         <AdminRuleConfigurationPage />
                     </ProtectedRoute>
                 }
+            />
+            <Route
+                path="/coverage-dashboard"
+                element={<ProtectedRoute><CoverageDashboardPage /></ProtectedRoute>}
             />
         </Routes>
     );

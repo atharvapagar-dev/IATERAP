@@ -3,6 +3,9 @@ package com.adtech.iaterap.backend.controller;
 import com.adtech.iaterap.backend.coverage.CoverageEngine;
 import com.adtech.iaterap.backend.coverage.CoverageScore;
 import com.adtech.iaterap.backend.coverage.CoverageScoringConfigurationService;
+import com.adtech.iaterap.backend.coverage.rule.RuleEngine;
+import com.adtech.iaterap.backend.coverage.rule.RuleResult;
+import com.adtech.iaterap.backend.dto.CoverageGapResponse;
 import com.adtech.iaterap.backend.dto.CoverageResponse;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.repository.TestProcedureRepository;
@@ -15,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Read-only procedure coverage endpoint for the Procedure Builder and demo flow. */
 @RestController
@@ -24,16 +29,19 @@ public class CoverageController {
     private final TestStepRepository stepRepository;
     private final CoverageEngine coverageEngine;
     private final CoverageScoringConfigurationService scoringConfigurationService;
+    private final RuleEngine ruleEngine;
 
     public CoverageController(
             TestProcedureRepository procedureRepository,
             TestStepRepository stepRepository,
             CoverageEngine coverageEngine,
-            CoverageScoringConfigurationService scoringConfigurationService) {
+            CoverageScoringConfigurationService scoringConfigurationService,
+            RuleEngine ruleEngine) {
         this.procedureRepository = procedureRepository;
         this.stepRepository = stepRepository;
         this.coverageEngine = coverageEngine;
         this.scoringConfigurationService = scoringConfigurationService;
+        this.ruleEngine = ruleEngine;
     }
 
     @GetMapping("/{procedureId}/coverage")
@@ -41,14 +49,27 @@ public class CoverageController {
         TestProcedure procedure = procedureRepository.findById(procedureId)
                 .orElseThrow(() -> new NoSuchElementException("Test procedure not found: " + procedureId));
 
-        CoverageScore score = coverageEngine.evaluate(
-                procedure,
-                procedure.getLru(),
-                stepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(procedureId));
+        var steps = stepRepository.findByTestProcedureIdOrderByExecutionOrderAsc(procedureId);
+        Map<String, RuleResult> results = ruleEngine.evaluate(procedure, procedure.getLru(), steps);
+        CoverageScore score = coverageEngine.calculate(results);
 
         Map<String, Double> weights = new LinkedHashMap<>();
         scoringConfigurationService.activeCoverageRules().forEach(rule ->
                 weights.put(rule.ruleId(), rule.weight().movePointLeft(2).doubleValue()));
+
+        List<CoverageGapResponse> gaps = new ArrayList<>();
+        results.forEach((ruleId, result) -> {
+            Object ids = result.getDetails().get("gapIds");
+            if (ids instanceof List<?> gapIds) {
+                gapIds.forEach(id -> {
+                    if (id instanceof Number number) {
+                        String type = ruleId.replace("COVERAGE-", "");
+                        gaps.add(new CoverageGapResponse(type, number.longValue(),
+                                "Unreferenced " + type.toLowerCase() + " element " + number.longValue()));
+                    }
+                });
+            }
+        });
 
         return new CoverageResponse(
                 procedure.getId(),
@@ -57,6 +78,6 @@ public class CoverageController {
                 weights,
                 score.getCompositeScore(),
                 score.getThresholdResults(),
-                score.getUnavailableReasons());
+                score.getUnavailableReasons(), gaps);
     }
 }
