@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import ManagementLayout from "../components/ManagementLayout";
 import { validationService } from "../services/validationService";
 import { testProcedureService } from "../services/testProcedureService";
-import { reviewerCommentService } from "../services/reviewerCommentService";
 import "../assets/styles/ValidationReports.css";
 
 const resultLabel = { MATCH: "Matched", MISMATCH: "Mismatched", OUTLIER: "Outlier", MISSING: "Missing" };
@@ -39,7 +38,7 @@ export default function ValidationReportsPage() {
     const issues = useMemo(() => readings.filter((reading) => reading.result !== "MATCH"), [readings]);
     const markAddressed = async (reading) => {
         try {
-            await reviewerCommentService.createComment({ procedureHistoryId: Number(historyId), testStepId: reading.testStepId, commentText: `Validation remediation recorded for ${resultLabel[reading.result] || reading.result} reading from ${selectedRun.sourceFilename}. ${reading.errorMessage || "Review evidence and update the procedure if required."}` });
+            await validationService.updateRemediation(reading.id, "RESOLVED", `Validation remediation recorded for ${resultLabel[reading.result] || reading.result} reading from ${selectedRun.sourceFilename}. ${reading.errorMessage || "Review evidence and update the procedure if required."}`);
             setAddressed((current) => new Set([...current, reading.id]));
         } catch (err) { setError("Unable to persist the remediation note."); }
     };

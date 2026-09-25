@@ -10,6 +10,9 @@ export const validationService = {
     getReadings(runId) {
         return api.get(`/validation/runs/${runId}/readings`);
     },
+    updateRemediation(readingId, status, note) {
+        return api.patch(`/validation/readings/${readingId}/remediation`, { status, note });
+    },
     upload(procedureHistoryId, format, file) {
         const body = new FormData();
         body.append("procedureHistoryId", procedureHistoryId);

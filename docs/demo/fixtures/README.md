@@ -5,9 +5,11 @@ AdTech data is available to the project team. They contain no customer,
 aircraft, or production information.
 
 Before uploading, replace the example `testStepId` values (`101`, `102`, and
-`103`) with IDs belonging to the selected procedure revision. The validation
-API intentionally rejects readings that are not part of that immutable
-revision.
+`103`) and `componentId` values with IDs belonging to the selected procedure
+revision and its owning LRU. The validation API rejects readings outside that
+immutable revision or its component boundary.
+
+CSV columns are `testStepId,componentType,componentId,observedValue,observedUnit,observedBehaviour`.
 
 | File | Purpose |
 | --- | --- |
