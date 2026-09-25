@@ -33,9 +33,9 @@ export default function CoverageDashboardPage() {
                 {error ? <p className="coverage-summary__error">{error}</p> : null}
                 <div className="coverage-table-wrap">
                     <table className="coverage-table">
-                        <thead><tr><th>Procedure</th><th>LRU / subsystem</th>{Object.keys(labels).map((key) => <th key={key}>{labels[key]}</th>)}<th>Composite</th></tr></thead>
+                        <thead><tr><th>Procedure</th><th>Subsystem</th><th>LRU</th>{Object.keys(labels).map((key) => <th key={key}>{labels[key]}</th>)}<th>Composite</th></tr></thead>
                         <tbody>{rows.map((row) => <tr key={row.procedureId}>
-                            <td>{row.procedureName}</td><td>{row.lruName}</td>
+                            <td>{row.procedureName}</td><td>{row.subsystemName}</td><td>{row.lruName}</td>
                             {Object.keys(labels).map((key) => <td key={key} className={row.categories?.[key] == null ? "coverage-cell coverage-cell--na" : row.categories[key] < 70 ? "coverage-cell coverage-cell--low" : "coverage-cell coverage-cell--good"}>{score(row.categories?.[key])}</td>)}
                             <td><strong>{score(row.compositeScore)}</strong></td>
                         </tr>)}</tbody>

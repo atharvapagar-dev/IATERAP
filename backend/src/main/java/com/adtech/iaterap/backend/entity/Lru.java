@@ -15,6 +15,10 @@ public class Lru {
     @NotBlank
     private String name;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subsystem_id")
+    private Subsystem subsystem;
+
     public Lru() {}
 
     public Lru(String name) {
@@ -32,4 +36,7 @@ public class Lru {
     public void setName(String name) {
         this.name = name;
     }
+
+    public Subsystem getSubsystem() { return subsystem; }
+    public void setSubsystem(Subsystem subsystem) { this.subsystem = subsystem; }
 }

@@ -10,6 +10,10 @@ import com.adtech.iaterap.backend.dto.CoverageResponse;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.repository.TestProcedureRepository;
 import com.adtech.iaterap.backend.repository.TestStepRepository;
+import com.adtech.iaterap.backend.repository.InterfaceRepository;
+import com.adtech.iaterap.backend.repository.SignalLibraryRepository;
+import com.adtech.iaterap.backend.repository.FaultTemplateRepository;
+import com.adtech.iaterap.backend.repository.FmeaBranchMappingRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,18 +34,28 @@ public class CoverageController {
     private final CoverageEngine coverageEngine;
     private final CoverageScoringConfigurationService scoringConfigurationService;
     private final RuleEngine ruleEngine;
+    private final InterfaceRepository interfaceRepository;
+    private final SignalLibraryRepository signalRepository;
+    private final FaultTemplateRepository faultRepository;
+    private final FmeaBranchMappingRepository fmeaRepository;
 
     public CoverageController(
             TestProcedureRepository procedureRepository,
             TestStepRepository stepRepository,
             CoverageEngine coverageEngine,
             CoverageScoringConfigurationService scoringConfigurationService,
-            RuleEngine ruleEngine) {
+            RuleEngine ruleEngine, InterfaceRepository interfaceRepository,
+            SignalLibraryRepository signalRepository, FaultTemplateRepository faultRepository,
+            FmeaBranchMappingRepository fmeaRepository) {
         this.procedureRepository = procedureRepository;
         this.stepRepository = stepRepository;
         this.coverageEngine = coverageEngine;
         this.scoringConfigurationService = scoringConfigurationService;
         this.ruleEngine = ruleEngine;
+        this.interfaceRepository = interfaceRepository;
+        this.signalRepository = signalRepository;
+        this.faultRepository = faultRepository;
+        this.fmeaRepository = fmeaRepository;
     }
 
     @GetMapping("/{procedureId}/coverage")
@@ -64,8 +78,7 @@ public class CoverageController {
                 gapIds.forEach(id -> {
                     if (id instanceof Number number) {
                         String type = ruleId.replace("COVERAGE-", "");
-                        gaps.add(new CoverageGapResponse(type, number.longValue(),
-                                "Unreferenced " + type.toLowerCase() + " element " + number.longValue()));
+                        gaps.add(new CoverageGapResponse(type, number.longValue(), describe(type, number.longValue())));
                     }
                 });
             }
@@ -79,5 +92,15 @@ public class CoverageController {
                 score.getCompositeScore(),
                 score.getThresholdResults(),
                 score.getUnavailableReasons(), gaps);
+    }
+
+    private String describe(String type, Long id) {
+        return switch (type) {
+            case "INTERFACE" -> interfaceRepository.findById(id).map(v -> "Unreferenced interface: " + v.getName()).orElse("Unreferenced interface " + id);
+            case "SIGNAL" -> signalRepository.findById(id).map(v -> "Unreferenced signal: " + v.getName()).orElse("Unreferenced signal " + id);
+            case "FAULT" -> faultRepository.findById(id).map(v -> "Unreferenced fault: " + v.getName() + " (" + v.getFaultCode() + ")").orElse("Unreferenced fault " + id);
+            case "FMEA" -> fmeaRepository.findById(id).map(v -> "Unreferenced FMEA branch: " + v.getFmeaBranchCode() + " — " + v.getFailureEffect()).orElse("Unreferenced FMEA branch " + id);
+            default -> "Unreferenced " + type.toLowerCase() + " element " + id;
+        };
     }
 }

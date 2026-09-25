@@ -41,6 +41,8 @@ public class CoverageHeatmapController {
         CoverageScore score = coverageEngine.calculate(results);
         return new CoverageHeatmapRow(procedure.getId(), procedure.getName(),
                 procedure.getLru() == null ? "Unassigned" : procedure.getLru().getName(),
+                procedure.getLru() == null || procedure.getLru().getSubsystem() == null
+                        ? "Unassigned" : procedure.getLru().getSubsystem().getName(),
                 score.getCategoryScores(), score.getCompositeScore());
     }
 }
