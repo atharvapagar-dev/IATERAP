@@ -1,0 +1,4 @@
+testStepId,observedValue,observedUnit,observedBehaviour
+101,2.50,VOLT,Nominal signal response observed during synthetic bench run
+102,12.00,MILLIAMPERE,Stable current response observed during synthetic bench run
+103,, ,BIT passed with no numeric reading required

@@ -1,0 +1,3 @@
+testStepId,observedValue,observedUnit,observedBehaviour
+101,4.80,VOLT,Signal is above the expected synthetic operating band
+102,19.95,MILLIAMPERE,Current drift observed during synthetic bench run

@@ -1,0 +1,18 @@
+[
+  {
+    "testStepId": 101,
+    "observedValue": 2.50,
+    "observedUnit": "VOLT",
+    "observedBehaviour": "Nominal signal response observed during synthetic bench run"
+  },
+  {
+    "testStepId": 102,
+    "observedValue": 12.00,
+    "observedUnit": "MILLIAMPERE",
+    "observedBehaviour": "Stable current response observed during synthetic bench run"
+  },
+  {
+    "testStepId": 103,
+    "observedBehaviour": "BIT passed with no numeric reading required"
+  }
+]
