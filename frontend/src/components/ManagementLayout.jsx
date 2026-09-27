@@ -68,6 +68,12 @@ export default function ManagementLayout({
                     <Link to="/admin/rules" style={linkStyle}>
                         Rule Management
                     </Link>
+                    <Link to="/coverage-dashboard" style={linkStyle}>
+                        Coverage Dashboard
+                    </Link>
+                    <Link to="/validation-reports" style={linkStyle}>
+                        Validation Reports
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>

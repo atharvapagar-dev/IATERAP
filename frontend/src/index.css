@@ -134,6 +134,95 @@ textarea {
     padding: 32px 0 48px;
 }
 
+.coverage-summary {
+    margin-top: 28px;
+    padding: 22px;
+}
+
+.coverage-summary__header,
+.coverage-summary__metric-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.coverage-summary__header .section-title {
+    margin: 0;
+}
+
+.coverage-summary__score {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 22px 0;
+    padding: 16px;
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.coverage-summary__score-label,
+.coverage-summary__metric small {
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+
+.coverage-summary__score strong {
+    color: var(--primary);
+    font-size: 2rem;
+}
+
+.coverage-summary__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.coverage-summary__metric {
+    padding: 14px;
+    background: #151b21;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.coverage-summary__metric strong {
+    display: block;
+    margin: 8px 0 3px;
+    font-size: 1.35rem;
+}
+
+.coverage-summary__threshold {
+    color: #9fc2ad;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.coverage-summary__threshold.is-failing,
+.coverage-summary__error {
+    color: var(--danger);
+}
+
+.coverage-gaps { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+.coverage-gap { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: .9rem; }
+.coverage-gap span { color: var(--muted); }
+.coverage-table-wrap { overflow-x: auto; }
+.coverage-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+.coverage-table th, .coverage-table td { border-bottom: 1px solid var(--border); padding: 11px 10px; text-align: left; white-space: nowrap; }
+.coverage-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+.coverage-cell { font-weight: 700; }
+.coverage-cell--good { color: #2f8f62; }
+.coverage-cell--low { color: #bd7b2d; }
+.coverage-cell--na { color: var(--muted); }
+
+@media (max-width: 720px) {
+    .coverage-summary__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .management-shell__header,
 .page-card,
 .form-card {

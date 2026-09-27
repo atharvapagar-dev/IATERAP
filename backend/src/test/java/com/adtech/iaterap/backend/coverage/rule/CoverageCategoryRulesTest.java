@@ -15,12 +15,15 @@ class CoverageCategoryRulesTest {
     @Test void interfacePartialCoverageCountsDuplicateReferencesOnce() {
         InterfaceRepository repo = mock(InterfaceRepository.class); Interface a = iface(10L), b = iface(11L), c = iface(12L);
         when(repo.findByLruId(1L)).thenReturn(List.of(a,b,c));
-        assertMeasured(new InterfaceCoverageRule(repo).evaluate(new TestProcedure(), lru, List.of(step(a),step(a),step(b))), 2, 3, "66.67");
+        RuleResult result = new InterfaceCoverageRule(repo).evaluate(new TestProcedure(), lru, List.of(step(a),step(a),step(b)));
+        assertMeasured(result, 2, 3, "66.67");
+        assertEquals(List.of(12L), result.getDetails().get("gapIds"));
     }
     @Test void signalFullyCoveredAndFullyUncoveredFixturesUseDefinedElements() {
         SignalLibraryRepository repo = mock(SignalLibraryRepository.class); SignalLibrary a = signal(20L), b = signal(21L);
         when(repo.findByLruId(1L)).thenReturn(List.of(a,b)); SignalCoverageRule rule = new SignalCoverageRule(repo);
         assertMeasured(rule.evaluate(new TestProcedure(), lru, List.of(signalStep(a),signalStep(b))), 2, 2, "100.00");
+        assertEquals(List.of(), rule.evaluate(new TestProcedure(), lru, List.of(signalStep(a),signalStep(b))).getDetails().get("gapIds"));
         assertMeasured(rule.evaluate(new TestProcedure(), lru, List.of(new TestStep())), 0, 2, "0.00");
     }
     @Test void faultPartialCoverageUsesFaultTemplateReferences() {

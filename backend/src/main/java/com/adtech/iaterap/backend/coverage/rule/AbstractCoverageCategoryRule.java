@@ -30,6 +30,9 @@ abstract class AbstractCoverageCategoryRule implements EngineeringRule {
         Set<Long> covered = referencedIds.stream().filter(definedIds::contains)
                 .collect(java.util.stream.Collectors.toSet());
         Map<String, Object> details = details(true);
+        details.put("definedIds", definedIds.stream().sorted().toList());
+        details.put("coveredIds", covered.stream().sorted().toList());
+        details.put("gapIds", definedIds.stream().filter(id -> !covered.contains(id)).sorted().toList());
         details.put("referencedElements", covered.size());
         details.put("totalElements", definedIds.size());
         if (definedIds.isEmpty()) {
