@@ -20,7 +20,7 @@ public class ValidationFixtureParser {
 
     private static final Set<String> REQUIRED_HEADERS = Set.of("testStepId");
     private static final Set<String> ALLOWED_HEADERS = Set.of(
-            "testStepId", "observedValue", "observedUnit", "observedBehaviour");
+            "testStepId", "componentType", "componentId", "observedValue", "observedUnit", "observedBehaviour");
 
     private final ObjectMapper objectMapper;
 
@@ -96,6 +96,8 @@ public class ValidationFixtureParser {
             }
             readings.add(new ValidationReadingInput(
                     parseStepId(value(row, positions, "testStepId"), i + 1),
+                    emptyToNull(value(row, positions, "componentType")),
+                    parseOptionalId(value(row, positions, "componentId"), "componentId", i + 1),
                     i + 1,
                     parseDecimal(value(row, positions, "observedValue"), "observedValue", i + 1),
                     parseUnit(value(row, positions, "observedUnit"), i + 1),
@@ -108,10 +110,23 @@ public class ValidationFixtureParser {
     private ValidationReadingInput parseRow(JsonNode row, int rowNumber) {
         return new ValidationReadingInput(
                 parseStepId(text(row, "testStepId"), rowNumber),
+                emptyToNull(text(row, "componentType")),
+                parseOptionalId(text(row, "componentId"), "componentId", rowNumber),
                 rowNumber,
                 parseDecimal(text(row, "observedValue"), "observedValue", rowNumber),
                 parseUnit(text(row, "observedUnit"), rowNumber),
                 emptyToNull(text(row, "observedBehaviour")));
+    }
+
+    private static Long parseOptionalId(String value, String field, int rowNumber) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            long id = Long.parseLong(value.trim());
+            if (id <= 0) throw new NumberFormatException();
+            return id;
+        } catch (Exception ex) {
+            throw new ValidationFixtureException("Row " + rowNumber + " has an invalid " + field);
+        }
     }
 
     private static Long parseStepId(String value, int rowNumber) {

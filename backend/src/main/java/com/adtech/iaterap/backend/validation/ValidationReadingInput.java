@@ -5,8 +5,15 @@ import java.math.BigDecimal;
 /** Parsed, unpersisted row from an external validation fixture. */
 public record ValidationReadingInput(
         Long testStepId,
+        String componentType,
+        Long componentId,
         Integer sourceRowNumber,
         BigDecimal observedValue,
         EngineeringUnit observedUnit,
         String observedBehaviour) {
+
+    public ValidationReadingInput(Long testStepId, Integer sourceRowNumber,
+            BigDecimal observedValue, EngineeringUnit observedUnit, String observedBehaviour) {
+        this(testStepId, null, null, sourceRowNumber, observedValue, observedUnit, observedBehaviour);
+    }
 }

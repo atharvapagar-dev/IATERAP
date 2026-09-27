@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.entity.ValidationReading;
 import com.adtech.iaterap.backend.entity.ValidationRun;
+import com.adtech.iaterap.backend.dto.ValidationRemediationRequest;
 import com.adtech.iaterap.backend.repository.ValidationReadingRepository;
 import com.adtech.iaterap.backend.repository.ValidationRunRepository;
 import com.adtech.iaterap.backend.service.ValidationIngestionService;
@@ -14,6 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -78,5 +82,27 @@ public class ValidationController {
             throw new ValidationFixtureException("Validation run not found: " + runId);
         }
         return readingRepository.findByValidationRunIdOrderBySourceRowNumberAsc(runId);
+    }
+
+    @PatchMapping("/readings/{readingId}/remediation")
+    public ValidationReading remediate(@PathVariable Long readingId,
+            @Valid @org.springframework.web.bind.annotation.RequestBody ValidationRemediationRequest request,
+            Principal principal) {
+        ValidationReading reading = readingRepository.findById(readingId)
+                .orElseThrow(() -> new ValidationFixtureException("Validation reading not found: " + readingId));
+        if (reading.getResult() == com.adtech.iaterap.backend.validation.ValidationResult.MATCH) {
+            throw new ValidationFixtureException("Matching readings do not require remediation");
+        }
+        reading.setRemediationStatus(request.getStatus());
+        reading.setRemediationNote(request.getNote().trim());
+        if (request.getStatus() == com.adtech.iaterap.backend.validation.RemediationStatus.RESOLVED
+                || request.getStatus() == com.adtech.iaterap.backend.validation.RemediationStatus.WAIVED) {
+            reading.setResolvedBy(principal == null ? "SYSTEM" : principal.getName());
+            reading.setResolvedAt(LocalDateTime.now());
+        } else {
+            reading.setResolvedBy(null);
+            reading.setResolvedAt(null);
+        }
+        return readingRepository.save(reading);
     }
 }

@@ -2,6 +2,8 @@ package com.adtech.iaterap.backend.validation;
 
 public enum ValidationRunStatus {
     RECEIVED,
-    VALIDATED,
+    ANALYZED,
+    REVIEW_REQUIRED,
+    ACCEPTED,
     REJECTED
 }

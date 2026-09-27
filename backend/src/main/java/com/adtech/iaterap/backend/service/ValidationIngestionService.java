@@ -72,7 +72,20 @@ public class ValidationIngestionService {
             if (!revisionStepIds.contains(input.testStepId())) {
                 throw new ValidationFixtureException(
                         "testStepId " + input.testStepId()
-                                + " is not part of procedure revision " + procedureHistoryId);
+                        + " is not part of procedure revision " + procedureHistoryId);
+            }
+            ExpectedContract contract = contracts.get(input.testStepId());
+            if (input.componentType() == null || input.componentId() == null) {
+                throw new ValidationFixtureException(
+                        "testStepId " + input.testStepId() + " must identify its componentType and componentId");
+            }
+            String normalizedType = input.componentType().trim().toUpperCase(Locale.ROOT);
+            Long expectedComponent = contract.components().get(normalizedType);
+            if (expectedComponent == null || !expectedComponent.equals(input.componentId())) {
+                throw new ValidationFixtureException(
+                        "Component " + input.componentType() + "#" + input.componentId()
+                                + " is not referenced by testStepId " + input.testStepId()
+                                + " in procedure revision " + procedureHistoryId);
             }
         }
 
@@ -99,6 +112,10 @@ public class ValidationIngestionService {
             ValidationReading reading = new ValidationReading();
             reading.setTestStepId(stepId);
             if (input != null) {
+                reading.setComponentType(input.componentType().trim().toUpperCase(Locale.ROOT));
+                reading.setComponentId(input.componentId());
+            }
+            if (input != null) {
                 reading.setSourceRowNumber(input.sourceRowNumber());
                 reading.setObservedValue(input.observedValue());
                 reading.setObservedUnit(input.observedUnit());
@@ -106,6 +123,9 @@ public class ValidationIngestionService {
             }
             reading.setNormalizedValue(comparison.normalizedValue());
             reading.setResult(comparison.result());
+            reading.setRemediationStatus(comparison.result() == ValidationResult.MATCH
+                    ? com.adtech.iaterap.backend.validation.RemediationStatus.RESOLVED
+                    : com.adtech.iaterap.backend.validation.RemediationStatus.OPEN);
             reading.setDeviation(comparison.deviation());
             reading.setErrorMessage(comparison.errorMessage());
             return reading;
@@ -114,7 +134,9 @@ public class ValidationIngestionService {
         run.setMismatchedCount(counts.getOrDefault(ValidationResult.MISMATCH, 0));
         run.setOutlierCount(counts.getOrDefault(ValidationResult.OUTLIER, 0));
         run.setMissingCount(counts.getOrDefault(ValidationResult.MISSING, 0));
-        run.setStatus(com.adtech.iaterap.backend.validation.ValidationRunStatus.VALIDATED);
+        run.setStatus((run.getMismatchedCount() + run.getOutlierCount() + run.getMissingCount()) == 0
+                ? com.adtech.iaterap.backend.validation.ValidationRunStatus.ANALYZED
+                : com.adtech.iaterap.backend.validation.ValidationRunStatus.REVIEW_REQUIRED);
         run = validationRunRepository.save(run);
 
         ValidationRun savedRun = run;
@@ -138,12 +160,18 @@ public class ValidationIngestionService {
                     Long id = step.get("id").asLong();
                     String expectedUnit = step.hasNonNull("expectedUnit")
                             ? step.get("expectedUnit").asText() : null;
+                    Map<String, Long> components = new java.util.LinkedHashMap<>();
+                    addComponent(components, "INTERFACE", step, "interfaceEntity");
+                    addComponent(components, "CONNECTOR", step, "connector");
+                    addComponent(components, "SIGNAL", step, "signalLibrary");
+                    addComponent(components, "PROTOCOL_TAG", step, "protocolTag");
+                    addComponent(components, "FAULT", step, "faultCategory");
                     contracts.put(id, new ExpectedContract(
                             textOrNull(step, "expectedRange"),
                             expectedUnit == null ? null
                                     : com.adtech.iaterap.backend.validation.EngineeringUnit
                                             .valueOf(expectedUnit),
-                            textOrNull(step, "expectedBehaviour")));
+                            textOrNull(step, "expectedBehaviour"), components));
                 }
             });
             return contracts;
@@ -159,9 +187,16 @@ public class ValidationIngestionService {
         return value == null || value.isNull() ? null : value.asText();
     }
 
+    private static void addComponent(Map<String, Long> components,
+            String type, com.fasterxml.jackson.databind.JsonNode step, String field) {
+        var value = step.get(field);
+        if (value != null && value.hasNonNull("id")) components.put(type, value.get("id").asLong());
+    }
+
     private record ExpectedContract(
             String expectedRange,
             com.adtech.iaterap.backend.validation.EngineeringUnit expectedUnit,
-            String expectedBehaviour) {
+            String expectedBehaviour,
+            Map<String, Long> components) {
     }
 }

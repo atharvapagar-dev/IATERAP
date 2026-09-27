@@ -8,6 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ValidationRunRepository extends JpaRepository<ValidationRun, Long> {
     Optional<ValidationRun> findByProcedureHistoryIdAndSourceSha256(
             Long procedureHistoryId, String sourceSha256);
-
     List<ValidationRun> findByProcedureHistoryIdOrderByUploadedAtDesc(Long procedureHistoryId);
 }

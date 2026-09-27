@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.entity;
 
 import com.adtech.iaterap.backend.validation.EngineeringUnit;
 import com.adtech.iaterap.backend.validation.ValidationResult;
+import com.adtech.iaterap.backend.validation.RemediationStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -31,6 +32,11 @@ public class ValidationReading {
     @Column(name = "test_step_id", nullable = false)
     private Long testStepId;
 
+    @Column(name = "component_type", length = 32)
+    private String componentType;
+    @Column(name = "component_id")
+    private Long componentId;
+
     @Column(name = "source_row_number")
     private Integer sourceRowNumber;
     @Column(name = "observed_value", precision = 30, scale = 10)
@@ -48,6 +54,16 @@ public class ValidationReading {
     @Column(nullable = false, length = 32)
     private ValidationResult result;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "remediation_status", nullable = false, length = 32)
+    private RemediationStatus remediationStatus = RemediationStatus.OPEN;
+    @Column(name = "remediation_note", length = 2000)
+    private String remediationNote;
+    @Column(name = "resolved_by", length = 255)
+    private String resolvedBy;
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
+
     @Column(precision = 30, scale = 10)
     private BigDecimal deviation;
     @Column(name = "error_message", length = 1000)
@@ -60,6 +76,10 @@ public class ValidationReading {
     public void setValidationRunId(Long v) { this.validationRunId = v; }
     public Long getTestStepId() { return testStepId; }
     public void setTestStepId(Long v) { this.testStepId = v; }
+    public String getComponentType() { return componentType; }
+    public void setComponentType(String v) { this.componentType = v; }
+    public Long getComponentId() { return componentId; }
+    public void setComponentId(Long v) { this.componentId = v; }
     public Integer getSourceRowNumber() { return sourceRowNumber; }
     public void setSourceRowNumber(Integer v) { this.sourceRowNumber = v; }
     public BigDecimal getObservedValue() { return observedValue; }
@@ -72,6 +92,14 @@ public class ValidationReading {
     public void setObservedBehaviour(String v) { this.observedBehaviour = v; }
     public ValidationResult getResult() { return result; }
     public void setResult(ValidationResult v) { this.result = v; }
+    public RemediationStatus getRemediationStatus() { return remediationStatus; }
+    public void setRemediationStatus(RemediationStatus v) { this.remediationStatus = v; }
+    public String getRemediationNote() { return remediationNote; }
+    public void setRemediationNote(String v) { this.remediationNote = v; }
+    public String getResolvedBy() { return resolvedBy; }
+    public void setResolvedBy(String v) { this.resolvedBy = v; }
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(LocalDateTime v) { this.resolvedAt = v; }
     public BigDecimal getDeviation() { return deviation; }
     public void setDeviation(BigDecimal v) { this.deviation = v; }
     public String getErrorMessage() { return errorMessage; }
