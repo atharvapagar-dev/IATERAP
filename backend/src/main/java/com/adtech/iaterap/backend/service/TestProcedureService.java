@@ -156,6 +156,15 @@ public class TestProcedureService {
                 .toList();
     }
 
+    public List<TestProcedureResponse> getByLru(Long lruId) {
+        if (!lruRepository.existsById(lruId)) {
+            throw new NoSuchElementException("LRU not found: " + lruId);
+        }
+        return testProcedureRepository.findByLruId(lruId).stream()
+                .map(p -> TestProcedureResponse.fromEntity(p, orderedSteps(p)))
+                .toList();
+    }
+
     // ---------- writes (content-changing saves) ----------
 
     /** Creates a new TestProcedure with its initial TestSteps and revision 1. */

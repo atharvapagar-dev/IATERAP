@@ -1,6 +1,7 @@
 package com.adtech.iaterap.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.adtech.iaterap.backend.validation.EngineeringUnit;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -122,6 +123,7 @@ public class TestStep {
     }
     public Long getId() { return id; }
     public Long getLruId() { return lruId; }
+    @JsonIgnore
     public TestProcedure getTestProcedure() { return testProcedure; }
     public void setTestProcedure(TestProcedure testProcedure) { this.testProcedure = testProcedure; }
     public Interface getInterfaceEntity() { return interfaceEntity; }

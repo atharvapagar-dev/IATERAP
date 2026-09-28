@@ -34,7 +34,7 @@ export const testProcedureService = {
     },
 
     getSteps(procedureId) {
-        return api.get(`/procedures/${procedureId}/steps`);
+        return api.get(`/steps/by-procedure/${procedureId}`);
     },
 
     getCoverage(procedureId) {
@@ -42,11 +42,11 @@ export const testProcedureService = {
     },
 
     addStep(procedureId, step) {
-        return api.post(`/procedures/${procedureId}/steps`, step);
+        return api.post(`/steps/by-procedure/${procedureId}`, step);
     },
 
     reorderSteps(procedureId, orderedStepIds) {
-        return api.patch(`/procedures/${procedureId}/steps/reorder`, orderedStepIds);
+        return api.patch(`/steps/by-procedure/${procedureId}/reorder`, orderedStepIds);
     },
 
     getHistory(id) {
