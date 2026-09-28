@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ManagementLayout from "../components/ManagementLayout";
 import TestStepCard from "../components/TestStepCard";
 import { testProcedureService } from "../services/testProcedureService";
+import { reviewerCommentService } from "../services/reviewerCommentService";
 
 import "../assets/styles/ReviewQueue.css";
 
@@ -26,16 +27,27 @@ export default function ReviewQueuePage() {
 
     // Detail view state
     const [selectedProcedure, setSelectedProcedure] = useState(null);
+    const [selectedRevisionId, setSelectedRevisionId] = useState(null);
     const [reviewerComments, setReviewerComments] = useState([]);
     const [commentText, setCommentText] = useState("");
     const [submittingComment, setSubmittingComment] = useState(false);
     const [commentError, setCommentError] = useState("");
     const [detailLoading, setDetailLoading] = useState(false);
 
-    const loadComments = async () => {
+    const loadComments = async (procedure) => {
         try {
             setDetailLoading(true);
-            setReviewerComments([]);
+            const historyResponse = await testProcedureService.getHistory(procedure.id);
+            const revisions = historyResponse.data || [];
+            const latest = revisions[revisions.length - 1];
+            if (!latest) {
+                setSelectedRevisionId(null);
+                setReviewerComments([]);
+                return;
+            }
+            setSelectedRevisionId(latest.id);
+            const commentsResponse = await reviewerCommentService.getByRevision(latest.id);
+            setReviewerComments(commentsResponse.data || []);
         } catch (err) {
             console.error("Failed to load comments:", err);
         } finally {
@@ -56,7 +68,7 @@ export default function ReviewQueuePage() {
                     const procedure = response.data.find((p) => p.id === Number(procedureId));
                     if (procedure) {
                         setSelectedProcedure(procedure);
-                        await loadComments();
+                        await loadComments(procedure);
                     }
                 }
             } catch (fetchError) {
@@ -73,11 +85,12 @@ export default function ReviewQueuePage() {
     const handleSelectProcedure = (procedure) => {
         setSelectedProcedure(procedure);
         navigate(`/procedures/review-queue/${procedure.id}`);
-        void loadComments();
+        void loadComments(procedure);
     };
 
     const handleCloseDetail = () => {
         setSelectedProcedure(null);
+        setSelectedRevisionId(null);
         setCommentText("");
         setCommentError("");
         navigate("/procedures/review-queue");
@@ -92,16 +105,15 @@ export default function ReviewQueuePage() {
         try {
             setSubmittingComment(true);
             setCommentError("");
-            // In a full implementation:
-            // await reviewerCommentService.createComment({
-            //     procedureHistoryId: selectedProcedure.latestRevisionId,
-            //     text: commentText,
-            // });
-            // Then reload comments
-            
-            // For now, show success message and clear input
+            if (!selectedRevisionId) {
+                throw new Error("No procedure revision is available for this comment.");
+            }
+            await reviewerCommentService.createComment({
+                procedureHistoryId: selectedRevisionId,
+                commentText: commentText.trim(),
+            });
+            await loadComments(selectedProcedure);
             setCommentText("");
-            // In production, reload comments: await loadComments(selectedProcedure.id);
         } catch (err) {
             console.error("Failed to add comment:", err);
             setCommentError("Unable to add comment right now.");
@@ -261,9 +273,9 @@ export default function ReviewQueuePage() {
                             ) : (
                                 reviewerComments.map((comment) => (
                                     <div key={comment.id} className="comment-item">
-                                        <strong>{comment.authorName || "Reviewer"}</strong>
+                                        <strong>{comment.author || "Reviewer"}</strong>
                                         <small>{new Date(comment.createdAt).toLocaleString()}</small>
-                                        <p>{comment.text}</p>
+                                        <p>{comment.commentText}</p>
                                     </div>
                                 ))
                             )}
