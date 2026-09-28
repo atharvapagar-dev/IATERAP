@@ -6,6 +6,8 @@ import com.adtech.iaterap.backend.repository.ValidationReadingRepository;
 import com.adtech.iaterap.backend.repository.ValidationRunRepository;
 import com.adtech.iaterap.backend.service.ValidationIngestionService;
 import com.adtech.iaterap.backend.validation.ValidationFixtureException;
+import com.adtech.iaterap.backend.validation.SyntheticInjectionScenario;
+import com.adtech.iaterap.backend.service.SyntheticFaultInjectionService;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
@@ -29,14 +31,26 @@ public class ValidationController {
     private final ValidationIngestionService ingestionService;
     private final ValidationRunRepository runRepository;
     private final ValidationReadingRepository readingRepository;
+    private final SyntheticFaultInjectionService syntheticFaultInjectionService;
 
     public ValidationController(
             ValidationIngestionService ingestionService,
             ValidationRunRepository runRepository,
-            ValidationReadingRepository readingRepository) {
+            ValidationReadingRepository readingRepository,
+            SyntheticFaultInjectionService syntheticFaultInjectionService) {
         this.ingestionService = ingestionService;
         this.runRepository = runRepository;
         this.readingRepository = readingRepository;
+        this.syntheticFaultInjectionService = syntheticFaultInjectionService;
+    }
+
+    @PostMapping("/runs/synthetic")
+    public ValidationRun runSynthetic(
+            @RequestParam Long procedureHistoryId,
+            @RequestParam(defaultValue = "NOMINAL") SyntheticInjectionScenario scenario,
+            Principal principal) {
+        String recordedBy = principal == null ? "SYSTEM" : principal.getName();
+        return syntheticFaultInjectionService.run(procedureHistoryId, scenario, recordedBy);
     }
 
     @PostMapping(value = "/runs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

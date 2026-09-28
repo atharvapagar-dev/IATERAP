@@ -19,4 +19,9 @@ export const validationService = {
             headers: { "Content-Type": "multipart/form-data" },
         });
     },
+    runSynthetic(procedureHistoryId, scenario) {
+        return api.post("/validation/runs/synthetic", null, {
+            params: { procedureHistoryId, scenario },
+        });
+    },
 };

@@ -10,6 +10,14 @@ three outcomes so the reviewer can see the complete workflow:
    Procedure Builder, update the revision, and upload the corrected fixture.
 4. Open **Coverage Dashboard** to show the updated category heatmap and
    composite score before returning to the approval queue.
+5. From **Validation Reports**, select an approved revision and run either
+   **Run nominal simulation** or **Inject synthetic fault**. These controls
+   generate a labelled JSON fixture and send it through the same validation
+   comparison and remediation path as an external upload.
+
+Synthetic injection is approval-gated: draft and in-review revisions are
+rejected. The generated run is synthetic evidence only; it is not a hardware
+measurement and must not be presented as fleet telemetry.
 
 Use the `synthetic-data` Spring profile for a repeatable, clearly labelled
 dataset. The profile resets and reseeds the synthetic domain at startup; it is
