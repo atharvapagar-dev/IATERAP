@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import ManagementLayout from "../components/ManagementLayout";
 import TestStepCard from "../components/TestStepCard";
 import { testProcedureService } from "../services/testProcedureService";
-import { reviewerCommentService } from "../services/reviewerCommentService";
 
 import "../assets/styles/ReviewQueue.css";
 
@@ -33,6 +32,17 @@ export default function ReviewQueuePage() {
     const [commentError, setCommentError] = useState("");
     const [detailLoading, setDetailLoading] = useState(false);
 
+    const loadComments = async () => {
+        try {
+            setDetailLoading(true);
+            setReviewerComments([]);
+        } catch (err) {
+            console.error("Failed to load comments:", err);
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
     // Load procedures on mount
     useEffect(() => {
         const loadQueue = async () => {
@@ -46,7 +56,7 @@ export default function ReviewQueuePage() {
                     const procedure = response.data.find((p) => p.id === Number(procedureId));
                     if (procedure) {
                         setSelectedProcedure(procedure);
-                        await loadComments(procedureId);
+                        await loadComments();
                     }
                 }
             } catch (fetchError) {
@@ -60,26 +70,10 @@ export default function ReviewQueuePage() {
         void loadQueue();
     }, [procedureId]);
 
-    const loadComments = async (procId) => {
-        try {
-            setDetailLoading(true);
-            // Load comments for the latest revision
-            // Note: In a full implementation, we would get the procedure_history_id
-            // For now, we'll show placeholder empty state
-            // const response = await reviewerCommentService.getByRevision(procedure.latestRevisionId);
-            // setReviewerComments(response.data || []);
-            setReviewerComments([]);
-        } catch (err) {
-            console.error("Failed to load comments:", err);
-        } finally {
-            setDetailLoading(false);
-        }
-    };
-
     const handleSelectProcedure = (procedure) => {
         setSelectedProcedure(procedure);
         navigate(`/procedures/review-queue/${procedure.id}`);
-        void loadComments(procedure.id);
+        void loadComments();
     };
 
     const handleCloseDetail = () => {

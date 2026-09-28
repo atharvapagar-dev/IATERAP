@@ -21,7 +21,7 @@ export default function ValidationReportsPage() {
     const selectProcedure = async (value) => {
         setProcedureId(value); setHistoryId(""); setRevisions([]); setRuns([]); setSelectedRun(null); setReadings([]);
         if (!value) return;
-        try { setRevisions((await testProcedureService.getHistory(value)).data || []); } catch (err) { setError("Unable to load procedure revisions."); }
+        try { setRevisions((await testProcedureService.getHistory(value)).data || []); } catch { setError("Unable to load procedure revisions."); }
     };
     const selectRevision = async (value) => { setHistoryId(value); setSelectedRun(null); setReadings([]); setAddressed(new Set()); if (value) await loadRuns(value); };
     const loadRuns = async (revision = historyId) => {
@@ -29,7 +29,7 @@ export default function ValidationReportsPage() {
         try { const response = await validationService.listRuns(revision); setRuns(response.data || []); if (response.data?.length) await selectRun(response.data[0]); }
         catch (err) { setError(err.response?.data?.message || "Unable to load validation reports."); }
     };
-    const selectRun = async (run) => { setSelectedRun(run); try { setReadings((await validationService.getReadings(run.id)).data || []); } catch (err) { setError("Unable to load report readings."); } };
+    const selectRun = async (run) => { setSelectedRun(run); try { setReadings((await validationService.getReadings(run.id)).data || []); } catch { setError("Unable to load report readings."); } };
     const upload = async (event) => {
         event.preventDefault();
         if (!historyId || !file) { setError("Select a procedure revision and choose a CSV or JSON fixture."); return; }
@@ -49,7 +49,7 @@ export default function ValidationReportsPage() {
         try {
             await reviewerCommentService.createComment({ procedureHistoryId: Number(historyId), testStepId: reading.testStepId, commentText: `Validation remediation recorded for ${resultLabel[reading.result] || reading.result} reading from ${selectedRun.sourceFilename}. ${reading.errorMessage || "Review evidence and update the procedure if required."}` });
             setAddressed((current) => new Set([...current, reading.id]));
-        } catch (err) { setError("Unable to persist the remediation note."); }
+        } catch { setError("Unable to persist the remediation note."); }
     };
 
     return <ManagementLayout title="Validation reports" description="Compare external evidence with an immutable procedure revision and close gaps before approval.">

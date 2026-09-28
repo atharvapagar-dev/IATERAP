@@ -21,10 +21,25 @@ public class SubsystemController {
         return service.getAllSubsystems();
     }
 
+    @GetMapping("/{id}")
+    public Subsystem getSubsystemById(@PathVariable Long id) {
+        return service.getById(id);
+    }
+
     @PostMapping
     public Subsystem createSubsystem(
             @RequestBody Subsystem subsystem
     ) {
         return service.save(subsystem);
+    }
+
+    @PutMapping("/{id}")
+    public Subsystem updateSubsystem(@PathVariable Long id, @RequestBody Subsystem subsystem) {
+        return service.update(id, subsystem);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteSubsystem(@PathVariable Long id) {
+        service.delete(id);
     }
 }
