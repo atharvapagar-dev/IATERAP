@@ -110,3 +110,9 @@ views. Deleting a procedure cascades its snapshot and report rows.
   do not hard-code it in the controller or frontend.
 - Keep state transitions in `ApprovalStateMachine`; coverage gating is a
   precondition at the approval boundary, not a second workflow.
+The frozen payload also stores the submitted LRU name and subsystem identity,
+plus a value copy of every measurable Interface, Signal, Fault, and FMEA
+element. The report derives its `gaps` and `coverageClassifications` from those
+copies, never from the live asset tables. Therefore a later rename or edit of
+an Interface cannot change either the historical gap description or the
+subsystem context shown for the submitted revision.
