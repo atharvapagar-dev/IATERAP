@@ -4,12 +4,14 @@ import com.adtech.iaterap.backend.dto.ReviewerCommentRequest;
 import com.adtech.iaterap.backend.dto.ReviewerCommentResponse;
 import com.adtech.iaterap.backend.service.ReviewerCommentService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviewer-comments")
+@PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
 public class ReviewerCommentController {
 
     private final ReviewerCommentService service;

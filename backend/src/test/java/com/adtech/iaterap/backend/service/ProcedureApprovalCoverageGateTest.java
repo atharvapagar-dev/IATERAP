@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class ProcedureApprovalCoverageGateTest {
@@ -46,6 +48,7 @@ class ProcedureApprovalCoverageGateTest {
     @Mock private FaultTemplateRepository faults;
     @Mock private RuleEngine ruleEngine;
     @Mock private ProcedureSnapshotService snapshots;
+    @Mock private AuditService auditService;
 
     private TestProcedureService service;
 
@@ -53,7 +56,7 @@ class ProcedureApprovalCoverageGateTest {
     void setUp() {
         service = new TestProcedureService(procedures, steps, histories, lrus, interfaces,
                 connectors, signals, protocols, faults,
-                new ObjectMapper().findAndRegisterModules(), null, ruleEngine);
+                new ObjectMapper().findAndRegisterModules(), auditService, ruleEngine);
         service.setProcedureSnapshotService(snapshots);
     }
 
@@ -70,6 +73,8 @@ class ProcedureApprovalCoverageGateTest {
         assertThat(response.getApprovalStatus()).isEqualTo("APPROVED");
         verify(snapshots).getReport(1L, 2);
         verify(procedures).save(procedure);
+        verify(auditService).record(eq("SYSTEM"), eq("APPROVED"), eq("TestProcedure"),
+                eq("1"), eq("IN_REVIEW"), any(), eq("Manual review decision for procedure version 2"));
     }
 
     @Test
@@ -114,6 +119,36 @@ class ProcedureApprovalCoverageGateTest {
 
         verify(snapshots, never()).getReport(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
         verify(procedures, never()).save(procedure);
+    }
+
+    @Test
+    void rejectTransitionsInReviewProcedureAndRecordsManualDecision() {
+        TestProcedure procedure = inReviewProcedure();
+        when(procedures.findById(1L)).thenReturn(Optional.of(procedure));
+        when(steps.findByTestProcedureIdOrderByExecutionOrderAsc(1L)).thenReturn(java.util.List.of());
+        when(procedures.save(procedure)).thenReturn(procedure);
+
+        var response = service.reject(1L);
+
+        assertThat(response.getApprovalStatus()).isEqualTo("REJECTED");
+        verify(procedures).save(procedure);
+        verify(auditService).record(eq("SYSTEM"), eq("REJECTED"), eq("TestProcedure"),
+                eq("1"), eq("IN_REVIEW"), any(), eq("Manual review decision for procedure version 2"));
+        verify(snapshots, never()).getReport(any(), any());
+    }
+
+    @Test
+    void rejectOutsideReviewIsRejectedWithoutPersistingOrAuditing() {
+        TestProcedure procedure = inReviewProcedure();
+        procedure.setApprovalStatus("DRAFT");
+        when(procedures.findById(1L)).thenReturn(Optional.of(procedure));
+
+        assertThatThrownBy(() -> service.reject(1L))
+                .isInstanceOf(InvalidApprovalTransitionException.class)
+                .hasMessageContaining("DRAFT");
+
+        verify(procedures, never()).save(procedure);
+        verify(auditService, never()).record(any(), any(), any(), any(), any(), any(), any());
     }
 
     private static CoverageReport report(String payload) {
