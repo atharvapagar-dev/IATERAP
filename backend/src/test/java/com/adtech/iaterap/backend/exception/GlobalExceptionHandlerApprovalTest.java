@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,5 +61,16 @@ class GlobalExceptionHandlerApprovalTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getStatus()).isEqualTo(409);
         assertThat(response.getBody().getMessage()).contains("COVERAGE-FAULT");
+    }
+
+    @Test
+    void accessDeniedMapsTo403WithoutExposingAuthorizationDetails() {
+        ResponseEntity<ApiError> response = handler.handleAccessDenied(new AccessDeniedException("role mismatch"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(403);
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("You do not have permission to access this resource.");
     }
 }

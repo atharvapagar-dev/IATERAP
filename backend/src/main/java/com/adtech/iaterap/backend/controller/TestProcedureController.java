@@ -8,6 +8,7 @@ import com.adtech.iaterap.backend.service.ProcedureSnapshotService;
 import com.adtech.iaterap.backend.entity.ProcedureSnapshot;
 import com.adtech.iaterap.backend.entity.CoverageReport;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,8 +64,15 @@ public class TestProcedureController {
     }
 
     @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
     public TestProcedureResponse approve(@PathVariable Long id) {
         return service.approve(id);
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
+    public TestProcedureResponse reject(@PathVariable Long id) {
+        return service.reject(id);
     }
 
     @GetMapping("/{id}/snapshots/{versionNumber}")
@@ -78,6 +86,7 @@ public class TestProcedureController {
     }
 
     @GetMapping("/review-queue")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
     public List<TestProcedureResponse> getReviewQueue() {
         return service.getReviewQueue();
     }

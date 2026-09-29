@@ -32,6 +32,35 @@ export default function ReviewQueuePage() {
     const [submittingComment, setSubmittingComment] = useState(false);
     const [commentError, setCommentError] = useState("");
     const [detailLoading, setDetailLoading] = useState(false);
+    const [commentRevisionId, setCommentRevisionId] = useState(null);
+    const [decisionPending, setDecisionPending] = useState("");
+    const [decisionError, setDecisionError] = useState("");
+    const [decisionSuccess, setDecisionSuccess] = useState("");
+
+    async function loadComments(procedure) {
+        try {
+            setDetailLoading(true);
+            setCommentError("");
+            const historyResponse = await testProcedureService.getHistory(procedure.id);
+            const reviewedRevision = historyResponse.data.find(
+                (revision) => revision.versionNumber === procedure.versionNumber,
+            );
+            if (!reviewedRevision) {
+                setCommentRevisionId(null);
+                setReviewerComments([]);
+                setCommentError("The submitted revision could not be found for reviewer comments.");
+                return;
+            }
+            setCommentRevisionId(reviewedRevision.id);
+            const commentsResponse = await reviewerCommentService.getByRevision(reviewedRevision.id);
+            setReviewerComments(commentsResponse.data || []);
+        } catch (err) {
+            console.error("Failed to load comments:", err);
+            setCommentError("Unable to load reviewer comments right now.");
+        } finally {
+            setDetailLoading(false);
+        }
+    }
 
     // Load procedures on mount
     useEffect(() => {
@@ -46,7 +75,7 @@ export default function ReviewQueuePage() {
                     const procedure = response.data.find((p) => p.id === Number(procedureId));
                     if (procedure) {
                         setSelectedProcedure(procedure);
-                        await loadComments(procedureId);
+                        await loadComments(procedure);
                     }
                 }
             } catch (fetchError) {
@@ -60,32 +89,21 @@ export default function ReviewQueuePage() {
         void loadQueue();
     }, [procedureId]);
 
-    const loadComments = async (procId) => {
-        try {
-            setDetailLoading(true);
-            // Load comments for the latest revision
-            // Note: In a full implementation, we would get the procedure_history_id
-            // For now, we'll show placeholder empty state
-            // const response = await reviewerCommentService.getByRevision(procedure.latestRevisionId);
-            // setReviewerComments(response.data || []);
-            setReviewerComments([]);
-        } catch (err) {
-            console.error("Failed to load comments:", err);
-        } finally {
-            setDetailLoading(false);
-        }
-    };
-
     const handleSelectProcedure = (procedure) => {
         setSelectedProcedure(procedure);
+        setDecisionError("");
+        setDecisionSuccess("");
         navigate(`/procedures/review-queue/${procedure.id}`);
-        void loadComments(procedure.id);
+        void loadComments(procedure);
     };
 
     const handleCloseDetail = () => {
         setSelectedProcedure(null);
         setCommentText("");
         setCommentError("");
+        setCommentRevisionId(null);
+        setDecisionError("");
+        setDecisionSuccess("");
         navigate("/procedures/review-queue");
     };
 
@@ -94,25 +112,44 @@ export default function ReviewQueuePage() {
             setCommentError("Comment cannot be empty.");
             return;
         }
+        if (!commentRevisionId) {
+            setCommentError("Reviewer comments are unavailable until the reviewed revision loads.");
+            return;
+        }
 
         try {
             setSubmittingComment(true);
             setCommentError("");
-            // In a full implementation:
-            // await reviewerCommentService.createComment({
-            //     procedureHistoryId: selectedProcedure.latestRevisionId,
-            //     text: commentText,
-            // });
-            // Then reload comments
-            
-            // For now, show success message and clear input
+            const response = await reviewerCommentService.createComment({
+                procedureHistoryId: commentRevisionId,
+                commentText: commentText.trim(),
+            });
+            setReviewerComments((comments) => [...comments, response.data]);
             setCommentText("");
-            // In production, reload comments: await loadComments(selectedProcedure.id);
         } catch (err) {
             console.error("Failed to add comment:", err);
             setCommentError("Unable to add comment right now.");
         } finally {
             setSubmittingComment(false);
+        }
+    };
+
+    const handleDecision = async (decision) => {
+        try {
+            setDecisionPending(decision);
+            setDecisionError("");
+            setDecisionSuccess("");
+            const response = decision === "approve"
+                ? await testProcedureService.approve(selectedProcedure.id)
+                : await testProcedureService.reject(selectedProcedure.id);
+            setSelectedProcedure(response.data);
+            setProcedures((items) => items.filter((item) => item.id !== response.data.id));
+            setDecisionSuccess(`Procedure ${decision === "approve" ? "approved" : "rejected"}.`);
+        } catch (err) {
+            const message = err.response?.data?.message || `Unable to ${decision} this procedure.`;
+            setDecisionError(message);
+        } finally {
+            setDecisionPending("");
         }
     };
 
@@ -230,6 +267,16 @@ export default function ReviewQueuePage() {
                             <p>{selectedProcedure.description}</p>
                         </div>
                     )}
+                    <div className="review-decision-actions">
+                        <button onClick={() => void handleDecision("approve")} disabled={Boolean(decisionPending) || selectedProcedure.approvalStatus !== "IN_REVIEW"}>
+                            {decisionPending === "approve" ? "Approving..." : "Approve"}
+                        </button>
+                        <button className="btn-danger" onClick={() => void handleDecision("reject")} disabled={Boolean(decisionPending) || selectedProcedure.approvalStatus !== "IN_REVIEW"}>
+                            {decisionPending === "reject" ? "Rejecting..." : "Reject"}
+                        </button>
+                    </div>
+                    {decisionError ? <p className="review-action-error">{decisionError}</p> : null}
+                    {decisionSuccess ? <p className="review-action-success">{decisionSuccess}</p> : null}
                 </section>
 
                 <section className="page-card stack">
@@ -267,9 +314,9 @@ export default function ReviewQueuePage() {
                             ) : (
                                 reviewerComments.map((comment) => (
                                     <div key={comment.id} className="comment-item">
-                                        <strong>{comment.authorName || "Reviewer"}</strong>
+                                        <strong>{comment.author || "Reviewer"}</strong>
                                         <small>{new Date(comment.createdAt).toLocaleString()}</small>
-                                        <p>{comment.text}</p>
+                                        <p>{comment.commentText}</p>
                                     </div>
                                 ))
                             )}
