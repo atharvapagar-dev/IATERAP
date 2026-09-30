@@ -43,6 +43,8 @@ def test_context_endpoint_returns_versioned_contract():
     assert body["test_procedure_id"] == 42
     assert isinstance(body["steps"], list)
     assert body["step_count"] == len(body["steps"])
+    assert "coverage_context" in body
+    assert isinstance(body["coverage_context"]["coverage_gaps"], list)
 
 
 def test_openapi_schema_exposes_all_endpoints():
