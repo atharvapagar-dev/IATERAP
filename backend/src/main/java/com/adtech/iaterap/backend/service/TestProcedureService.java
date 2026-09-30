@@ -265,7 +265,24 @@ public class TestProcedureService {
         procedure.setApprovalStatus(nextState.name());
         procedure.setUpdatedAt(java.time.LocalDateTime.now());
         testProcedureRepository.save(procedure);
-        return TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+        TestProcedureResponse response = TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+        recordReviewDecision(procedure, currentState, nextState, response);
+        return response;
+    }
+
+    /** Rejects an in-review procedure; rejection is intentionally not coverage-gated. */
+    @Transactional
+    public TestProcedureResponse reject(Long id) {
+        TestProcedure procedure = requireProcedure(id);
+        ApprovalState currentState = ApprovalState.valueOf(procedure.getApprovalStatus());
+        ApprovalState nextState = approvalStateMachine.transition(currentState, ApprovalState.REJECTED);
+
+        procedure.setApprovalStatus(nextState.name());
+        procedure.setUpdatedAt(java.time.LocalDateTime.now());
+        testProcedureRepository.save(procedure);
+        TestProcedureResponse response = TestProcedureResponse.fromEntity(procedure, orderedSteps(procedure));
+        recordReviewDecision(procedure, currentState, nextState, response);
+        return response;
     }
 
     private void assertFrozenCoverageThresholdsMet(TestProcedure procedure) {
@@ -295,6 +312,31 @@ public class TestProcedureService {
             throw exception;
         } catch (Exception exception) {
             throw new IllegalStateException("Unable to read frozen coverage report for approval.", exception);
+        }
+    }
+
+    private void recordReviewDecision(
+            TestProcedure procedure,
+            ApprovalState before,
+            ApprovalState after,
+            TestProcedureResponse result
+    ) {
+        if (auditService == null) {
+            return;
+        }
+        try {
+            auditService.record(
+                    resolveActor(),
+                    after.name(),
+                    "TestProcedure",
+                    String.valueOf(procedure.getId()),
+                    before.name(),
+                    safeSerialize(result),
+                    "Manual review decision for procedure version " + procedure.getVersionNumber()
+            );
+        } catch (Exception auditException) {
+            log.warn("Failed to persist {} audit log for procedure {}: {}",
+                    after, procedure.getId(), auditException.getMessage());
         }
     }
 

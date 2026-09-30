@@ -27,29 +27,37 @@ export default function ReviewQueuePage() {
 
     // Detail view state
     const [selectedProcedure, setSelectedProcedure] = useState(null);
-    const [selectedRevisionId, setSelectedRevisionId] = useState(null);
     const [reviewerComments, setReviewerComments] = useState([]);
     const [commentText, setCommentText] = useState("");
     const [submittingComment, setSubmittingComment] = useState(false);
     const [commentError, setCommentError] = useState("");
     const [detailLoading, setDetailLoading] = useState(false);
+    const [commentRevisionId, setCommentRevisionId] = useState(null);
+    const [decisionPending, setDecisionPending] = useState("");
+    const [decisionError, setDecisionError] = useState("");
+    const [decisionSuccess, setDecisionSuccess] = useState("");
 
     const loadComments = async (procedure) => {
         try {
             setDetailLoading(true);
+            setCommentError("");
             const historyResponse = await testProcedureService.getHistory(procedure.id);
             const revisions = historyResponse.data || [];
-            const latest = revisions[revisions.length - 1];
-            if (!latest) {
-                setSelectedRevisionId(null);
+            const reviewedRevision = revisions.find(
+                (revision) => revision.versionNumber === procedure.versionNumber,
+            );
+            if (!reviewedRevision) {
+                setCommentRevisionId(null);
                 setReviewerComments([]);
+                setCommentError("The submitted revision could not be found for reviewer comments.");
                 return;
             }
-            setSelectedRevisionId(latest.id);
-            const commentsResponse = await reviewerCommentService.getByRevision(latest.id);
+            setCommentRevisionId(reviewedRevision.id);
+            const commentsResponse = await reviewerCommentService.getByRevision(reviewedRevision.id);
             setReviewerComments(commentsResponse.data || []);
         } catch (err) {
             console.error("Failed to load comments:", err);
+            setCommentError("Unable to load reviewer comments right now.");
         } finally {
             setDetailLoading(false);
         }
@@ -84,15 +92,19 @@ export default function ReviewQueuePage() {
 
     const handleSelectProcedure = (procedure) => {
         setSelectedProcedure(procedure);
+        setDecisionError("");
+        setDecisionSuccess("");
         navigate(`/procedures/review-queue/${procedure.id}`);
         void loadComments(procedure);
     };
 
     const handleCloseDetail = () => {
         setSelectedProcedure(null);
-        setSelectedRevisionId(null);
         setCommentText("");
         setCommentError("");
+        setCommentRevisionId(null);
+        setDecisionError("");
+        setDecisionSuccess("");
         navigate("/procedures/review-queue");
     };
 
@@ -101,24 +113,44 @@ export default function ReviewQueuePage() {
             setCommentError("Comment cannot be empty.");
             return;
         }
+        if (!commentRevisionId) {
+            setCommentError("Reviewer comments are unavailable until the reviewed revision loads.");
+            return;
+        }
 
         try {
             setSubmittingComment(true);
             setCommentError("");
-            if (!selectedRevisionId) {
-                throw new Error("No procedure revision is available for this comment.");
-            }
-            await reviewerCommentService.createComment({
-                procedureHistoryId: selectedRevisionId,
+            const response = await reviewerCommentService.createComment({
+                procedureHistoryId: commentRevisionId,
                 commentText: commentText.trim(),
             });
-            await loadComments(selectedProcedure);
+            setReviewerComments((comments) => [...comments, response.data]);
             setCommentText("");
         } catch (err) {
             console.error("Failed to add comment:", err);
             setCommentError("Unable to add comment right now.");
         } finally {
             setSubmittingComment(false);
+        }
+    };
+
+    const handleDecision = async (decision) => {
+        try {
+            setDecisionPending(decision);
+            setDecisionError("");
+            setDecisionSuccess("");
+            const response = decision === "approve"
+                ? await testProcedureService.approve(selectedProcedure.id)
+                : await testProcedureService.reject(selectedProcedure.id);
+            setSelectedProcedure(response.data);
+            setProcedures((items) => items.filter((item) => item.id !== response.data.id));
+            setDecisionSuccess(`Procedure ${decision === "approve" ? "approved" : "rejected"}.`);
+        } catch (err) {
+            const message = err.response?.data?.message || `Unable to ${decision} this procedure.`;
+            setDecisionError(message);
+        } finally {
+            setDecisionPending("");
         }
     };
 
@@ -236,6 +268,16 @@ export default function ReviewQueuePage() {
                             <p>{selectedProcedure.description}</p>
                         </div>
                     )}
+                    <div className="review-decision-actions">
+                        <button onClick={() => void handleDecision("approve")} disabled={Boolean(decisionPending) || selectedProcedure.approvalStatus !== "IN_REVIEW"}>
+                            {decisionPending === "approve" ? "Approving..." : "Approve"}
+                        </button>
+                        <button className="btn-danger" onClick={() => void handleDecision("reject")} disabled={Boolean(decisionPending) || selectedProcedure.approvalStatus !== "IN_REVIEW"}>
+                            {decisionPending === "reject" ? "Rejecting..." : "Reject"}
+                        </button>
+                    </div>
+                    {decisionError ? <p className="review-action-error">{decisionError}</p> : null}
+                    {decisionSuccess ? <p className="review-action-success">{decisionSuccess}</p> : null}
                 </section>
 
                 <section className="page-card stack">

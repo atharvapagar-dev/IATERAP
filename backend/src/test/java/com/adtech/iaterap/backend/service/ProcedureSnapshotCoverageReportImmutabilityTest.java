@@ -39,8 +39,9 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
     @Autowired private ObjectMapper mapper;
 
     private Long procedureId;
-    private Interface iface; private Connector connector; private SignalLibrary signal;
-    private String interfaceName; private String connectorName; private String signalName; private String signalDescription;
+    private Lru lru;
+    private Interface iface; private Interface uncoveredInterface; private Connector connector; private SignalLibrary signal;
+    private String lruName; private String interfaceName; private String connectorName; private String signalName; private String signalDescription;
 
     @AfterEach
     void cleanUp() {
@@ -52,19 +53,22 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
             procedureRepository.deleteById(procedureId);
         }
         if (iface != null) { iface.setName(interfaceName); interfaces.save(iface); }
+        if (lru != null) { lru.setName(lruName); lrus.save(lru); }
         if (connector != null) { connector.setName(connectorName); connectors.save(connector); }
         if (signal != null) { signal.setName(signalName); signal.setDescription(signalDescription); signals.save(signal); }
+        if (uncoveredInterface != null) interfaces.delete(uncoveredInterface);
     }
 
     @Test
     void submissionArtifacts_areCreatedOnce_andRemainFrozenAfterSharedAssetEdits() throws Exception {
-        Lru lru = lrus.findAll().get(0);
+        lru = lrus.findAll().get(0);
         iface = interfaces.findByLruId(lru.getId()).get(0);
         connector = connectors.findByLruId(lru.getId()).get(0);
         signal = signals.findByLruId(lru.getId()).get(0);
         ProtocolTag protocol = protocols.findByLruId(lru.getId()).get(0);
         FaultTemplate fault = faults.findByLruId(lru.getId()).get(0);
-        interfaceName = iface.getName(); connectorName = connector.getName(); signalName = signal.getName(); signalDescription = signal.getDescription();
+        uncoveredInterface = interfaces.save(new Interface("T11 report-only interface", lru));
+        lruName = lru.getName(); interfaceName = iface.getName(); connectorName = connector.getName(); signalName = signal.getName(); signalDescription = signal.getDescription();
 
         TestProcedureResponse created = procedures.save(request(lru, protocol, fault));
         procedureId = created.getId();
@@ -91,16 +95,22 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
         String frozenSnapshot = snapshot.getSnapshotPayload();
         String frozenReport = report.getReportPayload();
         JsonNode originalReport = mapper.readTree(frozenReport);
+        assertEquals(lru.getName(), originalReport.path("lru").path("name").asText());
+        assertTrue(hasGap(originalReport.path("gaps"), uncoveredInterface.getId(), "T11 report-only interface"));
+        assertEquals("PARTIALLY_COVERED", originalReport.path("coverageClassifications").path("INTERFACE").asText());
 
         iface.setName(interfaceName + " changed"); interfaces.save(iface);
+        lru.setName(lruName + " changed"); lrus.save(lru);
         connector.setName(connectorName + " changed"); connectors.save(connector);
         signal.setName(signalName + " changed"); signal.setDescription("changed after submission"); signals.save(signal);
+        uncoveredInterface.setName("changed after submission"); interfaces.save(uncoveredInterface);
 
         ProcedureSnapshot afterEdits = artifacts.getSnapshot(procedureId, 2);
         CoverageReport reportAfterEdits = artifacts.getReport(procedureId, 2);
         assertEquals(frozenSnapshot, afterEdits.getSnapshotPayload());
         assertEquals(frozenReport, reportAfterEdits.getReportPayload());
         assertEquals(originalReport.path("compositeScore"), mapper.readTree(reportAfterEdits.getReportPayload()).path("compositeScore"));
+        assertTrue(hasGap(mapper.readTree(reportAfterEdits.getReportPayload()).path("gaps"), uncoveredInterface.getId(), "T11 report-only interface"));
         assertEquals(1, snapshots.findAll().stream().filter(s -> procedureId.equals(s.getTestProcedureId())).count());
         assertEquals(1, reports.findAll().stream().filter(r -> procedureId.equals(r.getTestProcedureId())).count());
         assertThrows(InvalidApprovalTransitionException.class, () -> procedures.submitForReview(procedureId));
@@ -114,13 +124,13 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
 
     @Test
     void deletingProcedure_cascadesToItsSnapshotAndCoverageReport() {
-        Lru lru = lrus.findAll().get(0);
+        lru = lrus.findAll().get(0);
         iface = interfaces.findByLruId(lru.getId()).get(0);
         connector = connectors.findByLruId(lru.getId()).get(0);
         signal = signals.findByLruId(lru.getId()).get(0);
         ProtocolTag protocol = protocols.findByLruId(lru.getId()).get(0);
         FaultTemplate fault = faults.findByLruId(lru.getId()).get(0);
-        interfaceName = iface.getName(); connectorName = connector.getName(); signalName = signal.getName(); signalDescription = signal.getDescription();
+        lruName = lru.getName(); interfaceName = iface.getName(); connectorName = connector.getName(); signalName = signal.getName(); signalDescription = signal.getDescription();
 
         procedureId = procedures.save(request(lru, protocol, fault)).getId();
         procedures.submitForReview(procedureId);
@@ -143,5 +153,12 @@ class ProcedureSnapshotCoverageReportImmutabilityTest {
         TestProcedureRequest request = new TestProcedureRequest();
         request.setLruId(lru.getId()); request.setName("T11 frozen procedure"); request.setDescription("submission artifact isolation"); request.setSteps(List.of(step));
         return request;
+    }
+
+    private boolean hasGap(JsonNode gaps, Long elementId, String description) {
+        for (JsonNode gap : gaps) {
+            if (gap.path("elementId").asLong() == elementId && gap.path("description").asText().contains(description)) return true;
+        }
+        return false;
     }
 }

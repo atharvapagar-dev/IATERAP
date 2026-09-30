@@ -121,6 +121,23 @@
     cursor: not-allowed;
 }
 
+.review-decision-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.review-action-error {
+    color: var(--danger);
+    margin: 0.75rem 0 0;
+}
+
+.review-action-success {
+    color: var(--success, #17653b);
+    margin: 0.75rem 0 0;
+}
+
 .empty-state {
     text-align: center;
     padding: 2rem;

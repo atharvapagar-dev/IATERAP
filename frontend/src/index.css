@@ -208,6 +208,12 @@ textarea {
 .coverage-gaps { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
 .coverage-gap { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: .9rem; }
 .coverage-gap span { color: var(--muted); }
+.coverage-legend { display: flex; gap: 10px; margin: 12px 0 20px; flex-wrap: wrap; }
+.coverage-subsystem { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px; }
+.coverage-status { border-radius: 999px; display: inline-block; font-size: .78rem; font-weight: 700; padding: 4px 9px; }
+.coverage-status--covered { background: #d9f5e5; color: #17653b; }
+.coverage-status--partially_covered { background: #fff0c2; color: #7a4c00; }
+.coverage-status--not_covered { background: #ffe0e0; color: #9b2525; }
 .coverage-table-wrap { overflow-x: auto; }
 .coverage-table { width: 100%; border-collapse: collapse; min-width: 980px; }
 .coverage-table th, .coverage-table td { border-bottom: 1px solid var(--border); padding: 11px 10px; text-align: left; white-space: nowrap; }
