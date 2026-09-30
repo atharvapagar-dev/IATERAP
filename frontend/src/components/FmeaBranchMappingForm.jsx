@@ -35,6 +35,7 @@ export default function FmeaBranchMappingForm({
     const [loadingFaultTemplates, setLoadingFaultTemplates] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const availableFaultTemplates = formState.lruId ? faultTemplates : [];
 
     useEffect(() => {
         const loadLrus = async () => {
@@ -54,7 +55,6 @@ export default function FmeaBranchMappingForm({
 
     useEffect(() => {
         if (!formState.lruId) {
-            setFaultTemplates([]);
             return;
         }
 
@@ -205,7 +205,7 @@ export default function FmeaBranchMappingForm({
                                 ? "Select fault template"
                                 : "Select an LRU first"}
                         </option>
-                        {faultTemplates.map((item) => (
+                        {availableFaultTemplates.map((item) => (
                             <option key={item.id} value={item.id}>
                                 {item.faultCode} — {item.name}
                             </option>

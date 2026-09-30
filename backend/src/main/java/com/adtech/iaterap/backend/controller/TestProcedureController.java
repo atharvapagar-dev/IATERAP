@@ -40,6 +40,11 @@ public class TestProcedureController {
         return service.getAll();
     }
 
+    @GetMapping("/by-lru/{lruId}")
+    public List<TestProcedureResponse> getByLru(@PathVariable Long lruId) {
+        return service.getByLru(lruId);
+    }
+
     @GetMapping("/{id}")
     public TestProcedureResponse getById(@PathVariable Long id) {
         return service.getById(id);

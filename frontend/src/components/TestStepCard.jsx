@@ -43,13 +43,12 @@ export default function TestStepCard({
     const [signalLibraries, setSignalLibraries] = useState([]);
     const [protocolTags, setProtocolTags] = useState([]);
     const [faultTemplates, setFaultTemplates] = useState([]);
-    const [loadingOptions, setLoadingOptions] = useState(!readOnly);
+    const [loadingOptions, setLoadingOptions] = useState(!readOnly && Boolean(lruId));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
         if (readOnly || !lruId) {
-            setLoadingOptions(false);
             return;
         }
 

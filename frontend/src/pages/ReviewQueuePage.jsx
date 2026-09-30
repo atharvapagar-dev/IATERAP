@@ -37,12 +37,13 @@ export default function ReviewQueuePage() {
     const [decisionError, setDecisionError] = useState("");
     const [decisionSuccess, setDecisionSuccess] = useState("");
 
-    async function loadComments(procedure) {
+    const loadComments = async (procedure) => {
         try {
             setDetailLoading(true);
             setCommentError("");
             const historyResponse = await testProcedureService.getHistory(procedure.id);
-            const reviewedRevision = historyResponse.data.find(
+            const revisions = historyResponse.data || [];
+            const reviewedRevision = revisions.find(
                 (revision) => revision.versionNumber === procedure.versionNumber,
             );
             if (!reviewedRevision) {
@@ -60,7 +61,7 @@ export default function ReviewQueuePage() {
         } finally {
             setDetailLoading(false);
         }
-    }
+    };
 
     // Load procedures on mount
     useEffect(() => {
