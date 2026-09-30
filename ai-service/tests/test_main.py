@@ -47,6 +47,21 @@ def test_context_endpoint_returns_versioned_contract():
     assert isinstance(body["coverage_context"]["coverage_gaps"], list)
 
 
+def test_context_endpoint_is_get_only():
+    for method in ("post", "put", "patch", "delete"):
+        response = getattr(client, method)("/context/test-procedure/42")
+        assert response.status_code == 405
+
+
+def test_context_route_declares_no_write_methods():
+    context_routes = [
+        route for route in app.routes
+        if route.path == "/context/test-procedure/{test_procedure_id}"
+    ]
+    assert len(context_routes) == 1
+    assert context_routes[0].methods == {"GET"}
+
+
 def test_openapi_schema_exposes_all_endpoints():
     response = client.get("/openapi.json")
     assert response.status_code == 200
