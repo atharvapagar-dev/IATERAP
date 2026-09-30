@@ -12,7 +12,13 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI
 
-from app.context_models import CONTEXT_CONTRACT_VERSION, TestProcedureContext, TestStepContext
+from app.context_models import (
+    CONTEXT_CONTRACT_VERSION,
+    CoverageContext,
+    CoverageGapContext,
+    TestProcedureContext,
+    TestStepContext,
+)
 from app.models import HealthResponse, SuggestRequest, SuggestResponse
 
 SERVICE_NAME = "iaterap-ai-service"
@@ -102,5 +108,17 @@ def get_test_procedure_context(test_procedure_id: int) -> TestProcedureContext:
         version_number=1,
         step_count=len(example_steps),
         steps=example_steps,
+        coverage_context=CoverageContext(
+            categories={"COVERAGE-INTERFACE": 100.0},
+            weights={"COVERAGE-INTERFACE": 0.15},
+            composite_score=15.0,
+            threshold_results={"COVERAGE-INTERFACE": True},
+            unavailable_reasons={},
+            coverage_gaps=[CoverageGapContext(
+                element_type="SIGNAL",
+                element_id=2,
+                description="Unreferenced signal: ALT_DISCRETE",
+            )],
+        ),
         retrieved_at=datetime.now(timezone.utc),
     )

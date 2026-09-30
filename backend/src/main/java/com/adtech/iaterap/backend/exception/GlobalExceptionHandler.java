@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -95,6 +96,18 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
+        ApiError apiError = new ApiError(
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase(),
+                "HTTP method '" + exception.getMethod() + "' is not supported for this endpoint.",
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(apiError);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
