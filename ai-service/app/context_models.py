@@ -37,6 +37,25 @@ class TestStepContext(BaseModel):
     approval_status: str
 
 
+class CoverageGapContext(BaseModel):
+    """Deterministic uncovered element supplied by the backend."""
+
+    element_type: str
+    element_id: int
+    description: str
+
+
+class CoverageContext(BaseModel):
+    """Coverage evidence; it contains no mutable backend handle."""
+
+    categories: dict[str, Optional[float]] = Field(default_factory=dict)
+    weights: dict[str, float] = Field(default_factory=dict)
+    composite_score: Optional[float] = None
+    threshold_results: dict[str, Optional[bool]] = Field(default_factory=dict)
+    unavailable_reasons: dict[str, str] = Field(default_factory=dict)
+    coverage_gaps: list[CoverageGapContext] = Field(default_factory=list)
+
+
 class TestProcedureContext(BaseModel):
     """Read-only, versioned context snapshot for a TestProcedure.
 
@@ -54,4 +73,5 @@ class TestProcedureContext(BaseModel):
     version_number: int
     step_count: int
     steps: list[TestStepContext]
+    coverage_context: Optional[CoverageContext] = None
     retrieved_at: datetime
