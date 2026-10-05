@@ -60,9 +60,20 @@ class SimilarLruEvidence(BaseModel):
     similarity_score: float = Field(ge=0.0, le=1.0)
 
 
+class ConfidenceEvidence(BaseModel):
+    """Explainable confidence calculation for one advisory suggestion."""
+
+    score: float = Field(ge=0.0, le=1.0)
+    band: str = Field(pattern="^(LOW|MEDIUM|HIGH)$")
+    highest_similarity: float = Field(ge=0.0, le=1.0)
+    supporting_lru_count: int = Field(ge=1)
+    corroboration_uplift: float = Field(ge=0.0, le=1.0)
+
+
 class FaultScenarioRecommendation(BaseModel):
     fault_scenario: str
     confidence: float = Field(ge=0.0, le=1.0)
+    confidence_evidence: ConfidenceEvidence
     supporting_lrus: list[SimilarLruEvidence] = Field(min_length=1)
     rationale: str
 
@@ -72,6 +83,7 @@ class CandidateTestCaseRecommendation(BaseModel):
     objective: str | None = None
     fault_scenario: str
     confidence: float = Field(ge=0.0, le=1.0)
+    confidence_evidence: ConfidenceEvidence
     supporting_lrus: list[SimilarLruEvidence] = Field(min_length=1)
     rationale: str
 
