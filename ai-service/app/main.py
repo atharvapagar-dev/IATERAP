@@ -11,6 +11,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
+from app.advisory_models import AdvisoryRecommendationRequest, AdvisoryRecommendationResponse
+from app.advisory_service import recommend
 
 from app.context_models import (
     CONTEXT_CONTRACT_VERSION,
@@ -28,9 +30,8 @@ app = FastAPI(
     title="IATERAP AI Advisory Service",
     description=(
         "Architecturally independent AI advisory microservice for IATERAP. "
-        "Currently a skeleton: /suggest returns a deterministic canned "
-        "response and /context/test-step exposes a read-only, versionable "
-        "context contract for a future Coverage Engine."
+        "Provides a deterministic, explainable similarity-based advisory "
+        "endpoint alongside the existing read-only context contract."
     ),
     version=SERVICE_VERSION,
 )
@@ -60,6 +61,25 @@ def suggest(request: SuggestRequest) -> SuggestResponse:
         source="stub",
         generated_at=datetime.now(timezone.utc),
     )
+
+
+@app.post(
+    "/advisory/recommendations",
+    response_model=AdvisoryRecommendationResponse,
+    tags=["advisory"],
+)
+def advisory_recommendations(
+        request: AdvisoryRecommendationRequest,
+) -> AdvisoryRecommendationResponse:
+    """Return explainable fault and candidate-test recommendations.
+
+    AI-242 deliberately accepts the target and historical cohort in the
+    request. This service has no database credentials and performs no writes;
+    the Spring read-only context boundary remains the authoritative source of
+    engineering data. Ranking is reproducible TF-IDF cosine similarity, not a
+    generative model and not an automatic approval or procedure mutation.
+    """
+    return recommend(request)
 
 
 @app.get(

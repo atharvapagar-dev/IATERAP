@@ -62,10 +62,76 @@ def test_context_route_declares_no_write_methods():
     assert context_routes[0].methods == {"GET"}
 
 
+def test_advisory_recommends_missing_faults_and_candidate_test_cases():
+    response = client.post(
+        "/advisory/recommendations",
+        json={
+            "target_lru_id": 900,
+            "target_lru_name": "Flight Control Computer Variant B",
+            "subsystem": "Flight Controls",
+            "interfaces": ["ARINC429", "Discrete I/O"],
+            "protocols": ["ARINC429"],
+            "known_fault_scenarios": ["Voltage Drop"],
+            "historical_lrus": [
+                {
+                    "lru_id": 101,
+                    "name": "Flight Control Computer Variant A",
+                    "subsystem": "Flight Controls",
+                    "interfaces": ["ARINC429", "Discrete I/O"],
+                    "protocols": ["ARINC429"],
+                    "fault_scenarios": ["Voltage Drop", "Signal Loss"],
+                    "test_cases": [
+                        {
+                            "title": "Verify ARINC signal-loss recovery",
+                            "objective": "Confirm recovery following signal interruption.",
+                            "fault_scenario": "Signal Loss",
+                        }
+                    ],
+                },
+                {
+                    "lru_id": 102,
+                    "name": "Power Distribution Unit",
+                    "subsystem": "Power",
+                    "interfaces": ["Discrete I/O"],
+                    "protocols": ["CAN"],
+                    "fault_scenarios": ["Overcurrent"],
+                    "test_cases": [],
+                },
+            ],
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["advisory_version"] == "1.0"
+    assert body["similar_lrus"][0]["lru_id"] == 101
+    assert [item["fault_scenario"] for item in body["missing_fault_scenarios"]] == ["Signal Loss"]
+    assert body["candidate_test_cases"][0]["title"] == "Verify ARINC signal-loss recovery"
+    assert body["candidate_test_cases"][0]["fault_scenario"] == "Signal Loss"
+    assert "Test Engineer" in body["disclaimer"]
+
+
+def test_advisory_excludes_known_faults_and_rejects_target_in_history():
+    payload = {
+        "target_lru_id": 10,
+        "target_lru_name": "Target LRU",
+        "interfaces": ["CAN"],
+        "known_fault_scenarios": ["Open Circuit"],
+        "historical_lrus": [{
+            "lru_id": 10,
+            "name": "Target LRU duplicate",
+            "interfaces": ["CAN"],
+            "fault_scenarios": ["Open Circuit"],
+        }],
+    }
+    response = client.post("/advisory/recommendations", json=payload)
+    assert response.status_code == 422
+
+
 def test_openapi_schema_exposes_all_endpoints():
     response = client.get("/openapi.json")
     assert response.status_code == 200
     paths = response.json()["paths"]
     assert "/health" in paths
     assert "/suggest" in paths
+    assert "/advisory/recommendations" in paths
     assert "/context/test-procedure/{test_procedure_id}" in paths
