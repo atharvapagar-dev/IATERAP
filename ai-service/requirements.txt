@@ -3,3 +3,5 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.3
 # Required by fastapi.testclient and the AI-service contract tests.
 httpx==0.28.1
+pandas==2.2.3
+scikit-learn==1.6.1
