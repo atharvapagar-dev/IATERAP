@@ -74,6 +74,9 @@ export default function ManagementLayout({
                     <Link to="/validation-reports" style={linkStyle}>
                         Validation Reports
                     </Link>
+                    <Link to="/reliability-dashboard" style={linkStyle}>
+                        Reliability Analytics
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>
