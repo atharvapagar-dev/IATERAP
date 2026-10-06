@@ -1,0 +1,14 @@
+[
+  {
+    "testStepId": 1,
+    "observedValue": 4.2,
+    "observedUnit": "VOLT",
+    "observedBehaviour": "Synthetic duplicate fixture row one"
+  },
+  {
+    "testStepId": 1,
+    "observedValue": 4.3,
+    "observedUnit": "VOLT",
+    "observedBehaviour": "Synthetic duplicate fixture row two"
+  }
+]
