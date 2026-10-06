@@ -60,6 +60,12 @@ scikit-learn TF-IDF/cosine similarity across LRU name, subsystem, interfaces,
 and protocols. It returns the similarly ranked LRUs, fault scenarios absent
 from the target's known set, and candidate test cases linked to those faults.
 
+Every returned fault scenario and candidate test case includes a numeric
+`confidence` and `confidence_evidence`: the strongest historical similarity,
+the count of independently supporting LRUs, a capped corroboration uplift, and
+a `LOW`, `MEDIUM`, or `HIGH` confidence band. Confidence is explainable
+decision-support evidence, never an automatic safety or approval decision.
+
 The result is deterministic and explainable; it does not call an external LLM,
 write to IATERAP, create test procedures, or approve engineering decisions.
 Every recommendation remains subject to Test Engineer review and the existing

@@ -17,6 +17,7 @@ from app.advisory_models import (
     AdvisoryRecommendationRequest,
     AdvisoryRecommendationResponse,
     CandidateTestCaseRecommendation,
+    ConfidenceEvidence,
     FaultScenarioRecommendation,
     SimilarLruEvidence,
 )
@@ -24,6 +25,7 @@ from app.advisory_models import (
 ADVISORY_VERSION = "1.0"
 METHOD = "TF-IDF cosine similarity over LRU name, subsystem, interfaces, and protocols"
 MIN_SIMILARITY = 0.20
+MAX_CORROBORATION_UPLIFT = 0.20
 DISCLAIMER = (
     "Recommendations are decision-support only. A Test Engineer must review, "
     "adapt, and approve every suggested fault scenario and test case."
@@ -87,7 +89,8 @@ def recommend(request: AdvisoryRecommendationRequest) -> AdvisoryRecommendationR
     missing_faults = [
         FaultScenarioRecommendation(
             fault_scenario=scenario_labels[key],
-            confidence=_aggregate_confidence(evidence),
+            confidence=_confidence(evidence).score,
+            confidence_evidence=_confidence(evidence),
             supporting_lrus=evidence,
             rationale=_rationale("fault scenario", scenario_labels[key], evidence),
         )
@@ -103,7 +106,8 @@ def recommend(request: AdvisoryRecommendationRequest) -> AdvisoryRecommendationR
             title=title,
             objective=test_objectives[test_key],
             fault_scenario=scenario_labels[scenario_key],
-            confidence=_aggregate_confidence(evidence),
+            confidence=_confidence(evidence).score,
+            confidence_evidence=_confidence(evidence),
             supporting_lrus=evidence,
             rationale=_rationale("test case", title, evidence),
         ))
@@ -133,9 +137,28 @@ def _score(value: float) -> float:
     return round(float(value), 4)
 
 
-def _aggregate_confidence(evidence: list[SimilarLruEvidence]) -> float:
-    # Independent supporting LRUs increase confidence without exceeding 1.0.
-    return _score(min(1.0, sum(item.similarity_score for item in evidence)))
+def _confidence(evidence: list[SimilarLruEvidence]) -> ConfidenceEvidence:
+    """Score similarity evidence without treating a recommendation as approval.
+
+    The closest comparable LRU is the primary signal. Independent additional
+    LRUs can provide at most a 20% uplift, preventing a large cohort of weak
+    matches from outscoring one genuinely strong match.
+    """
+    highest_similarity = max(item.similarity_score for item in evidence)
+    supporting_count = len(evidence)
+    corroboration_uplift = min(
+        MAX_CORROBORATION_UPLIFT,
+        (supporting_count - 1) * 0.10,
+    )
+    score = _score(highest_similarity + (1 - highest_similarity) * corroboration_uplift)
+    band = "HIGH" if score >= 0.75 else "MEDIUM" if score >= 0.50 else "LOW"
+    return ConfidenceEvidence(
+        score=score,
+        band=band,
+        highest_similarity=_score(highest_similarity),
+        supporting_lru_count=supporting_count,
+        corroboration_uplift=_score(corroboration_uplift),
+    )
 
 
 def _rationale(kind: str, label: str, evidence: list[SimilarLruEvidence]) -> str:
