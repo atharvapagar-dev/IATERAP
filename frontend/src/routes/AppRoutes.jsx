@@ -45,6 +45,7 @@ import ReviewQueuePage from "../pages/ReviewQueuePage";
 import AdminRuleConfigurationPage from "../pages/AdminRuleConfigurationPage";
 import CoverageDashboardPage from "../pages/CoverageDashboardPage";
 import ValidationReportsPage from "../pages/ValidationReportsPage";
+import ReliabilityDashboardPage from "../pages/ReliabilityDashboardPage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -390,6 +391,10 @@ function AppRoutes() {
             <Route
                 path="/validation-reports"
                 element={<ProtectedRoute><ValidationReportsPage /></ProtectedRoute>}
+            />
+            <Route
+                path="/reliability-dashboard"
+                element={<ProtectedRoute><ReliabilityDashboardPage /></ProtectedRoute>}
             />
         </Routes>
     );
