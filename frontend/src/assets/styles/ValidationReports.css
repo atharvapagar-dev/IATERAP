@@ -3,16 +3,61 @@
 .validation-upload-form label { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
 .validation-upload-form input, .validation-upload-form select { margin-top: 6px; text-transform: none; }
 .validation-upload-form input[type=file] { padding: .68rem; }
-.validation-actions { display: flex; gap: 8px; }
-.validation-layout { display: grid; grid-template-columns: minmax(230px, .7fr) minmax(0, 1.8fr); gap: 18px; margin-top: 18px; }
-.validation-run-list { display: grid; gap: 8px; }
-.validation-run { display: grid; gap: 3px; text-align: left; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-.validation-run span, .validation-run small { color: var(--muted); }
+.validation-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.validation-layout { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(0, 1.75fr); gap: 18px; margin-top: 18px; }
+.validation-run-list { display: grid; gap: 8px; max-height: 520px; overflow-y: auto; }
+.validation-run { display: grid; gap: 4px; text-align: left; background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); cursor: pointer; transition: border-color .15s, background .15s; }
+.validation-run:hover { border-color: var(--primary); }
+.validation-run span, .validation-run small { color: var(--muted); font-size: .82rem; }
 .validation-run.is-selected { border-color: var(--primary); background: #20313b; }
-.validation-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 24px; }
+.validation-metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0 20px; }
 .validation-metric { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; background: #151b21; }
-.validation-metric span { display: block; color: var(--muted); font-size: .75rem; text-transform: uppercase; }
-.validation-metric strong { font-size: 1.7rem; }
-.validation-metric--good strong { color: #8bc7a5; }.validation-metric--bad strong { color: var(--danger); }.validation-metric--warn strong { color: #d6ad71; }
-.validation-remediation { border-top: 1px solid var(--border); padding-top: 16px; }.validation-issue { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }.validation-issue p { margin: 4px 0; color: var(--muted); }.validation-issue small { color: var(--muted); }.validation-issue.is-addressed { opacity: .55; }
-@media (max-width: 900px) { .validation-upload-form, .validation-layout { grid-template-columns: 1fr; }.validation-metrics { grid-template-columns: repeat(2, 1fr); } }
+.validation-metric span { display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.validation-metric strong { font-size: 1.5rem; display: block; margin-top: 4px; }
+.validation-metric--good strong { color: #8bc7a5; }
+.validation-metric--bad strong { color: var(--danger); }
+.validation-metric--warn strong { color: #d6ad71; }
+.validation-metric--info strong { color: var(--primary); }
+
+.synthetic-controls { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+.synthetic-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.synthetic-grid label { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; display: flex; flex-direction: column; gap: 4px; }
+
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.badge--synthetic { background: #3b2818; color: #f0a74b; border: 1px solid #73481b; }
+.badge--telemetry { background: #182b20; color: #6ece8f; border: 1px solid #285437; }
+.badge--match { background: #182b20; color: #8bc7a5; }
+.badge--mismatch { background: #381a1a; color: var(--danger); }
+.badge--outlier { background: #352a16; color: #d6ad71; }
+.badge--missing { background: #311c2e; color: #df88d0; }
+
+.evidence-banner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 16px; font-size: .88rem; }
+.evidence-banner--synthetic { background: #261f18; border: 1px solid #633f1c; color: #e6b986; }
+.evidence-banner--telemetry { background: #14221b; border: 1px solid #234832; color: #a1d6b4; }
+
+.report-traceability { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 18px; padding: 12px; background: #151b21; border-radius: var(--radius); border: 1px solid var(--border); font-size: .85rem; }
+.report-traceability div span { display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; }
+.report-traceability div strong { color: var(--text); }
+
+.alert-banner { padding: 10px 14px; border-radius: var(--radius); font-size: .88rem; margin: 8px 0; }
+.alert-banner--error { background: #361717; border: 1px solid #782e2e; color: #ffb8b8; }
+.alert-banner--success { background: #15291d; border: 1px solid #285c39; color: #a3e8ba; }
+.alert-banner--warn { background: #332612; border: 1px solid #6c4f1c; color: #eed49f; }
+
+.readings-container { margin-top: 18px; }
+.reading-item { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); margin-bottom: 8px; }
+.reading-meta { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; }
+.reading-meta p { margin: 0; color: var(--muted); }
+.reading-meta small { color: var(--muted); font-size: .78rem; }
+
+.validation-remediation { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px; }
+.validation-issue { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.validation-issue p { margin: 4px 0; color: var(--muted); }
+.validation-issue small { color: var(--muted); }
+.validation-issue.is-addressed { opacity: .55; }
+
+@media (max-width: 900px) {
+  .validation-upload-form, .validation-layout { grid-template-columns: 1fr; }
+  .validation-metrics { grid-template-columns: repeat(2, 1fr); }
+  .synthetic-grid { grid-template-columns: 1fr; }
+}

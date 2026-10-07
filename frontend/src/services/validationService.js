@@ -10,6 +10,12 @@ export const validationService = {
     getReadings(runId) {
         return api.get(`/validation/runs/${runId}/readings`);
     },
+    getReport(runId) {
+        return api.get(`/validation/runs/${runId}/report`);
+    },
+    listReports(procedureHistoryId) {
+        return api.get("/validation/reports", { params: { procedureHistoryId } });
+    },
     upload(procedureHistoryId, format, file) {
         const body = new FormData();
         body.append("procedureHistoryId", procedureHistoryId);
@@ -19,9 +25,17 @@ export const validationService = {
             headers: { "Content-Type": "multipart/form-data" },
         });
     },
-    runSynthetic(procedureHistoryId, scenario) {
-        return api.post("/validation/runs/synthetic", null, {
-            params: { procedureHistoryId, scenario },
-        });
+    runSynthetic(procedureHistoryId, scenario = "NOMINAL", options = {}) {
+        const params = { procedureHistoryId, scenario };
+        if (options.faultCategory) {
+            params.faultCategory = options.faultCategory;
+        }
+        if (options.targetLruId) {
+            params.targetLruId = options.targetLruId;
+        }
+        if (options.targetStepId) {
+            params.targetStepId = options.targetStepId;
+        }
+        return api.post("/validation/runs/synthetic", null, { params });
     },
 };
