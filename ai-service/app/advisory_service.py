@@ -24,7 +24,8 @@ from app.advisory_models import (
 
 ADVISORY_VERSION = "1.0"
 METHOD = "TF-IDF cosine similarity over LRU name, subsystem, interfaces, and protocols"
-MIN_SIMILARITY = 0.20
+# A shared generic interface alone is not enough to make two LRUs comparable.
+MIN_SIMILARITY = 0.30
 MAX_CORROBORATION_UPLIFT = 0.20
 DISCLAIMER = (
     "Recommendations are decision-support only. A Test Engineer must review, "
