@@ -23,6 +23,10 @@ Use the `synthetic-data` Spring profile for a repeatable, clearly labelled
 dataset. The profile resets and reseeds the synthetic domain at startup; it is
 not production data and must never be enabled for a production deployment.
 
+The profile seeds engineering assets, not fixed test-procedure step IDs. Use
+the synthetic fixture pack at `database/demo-validation/` to generate a CSV or
+JSON file from the actual IDs of the approved revision selected for the demo.
+
 ## Fixture contract
 
 CSV columns are `testStepId,observedValue,observedUnit,observedBehaviour`.
