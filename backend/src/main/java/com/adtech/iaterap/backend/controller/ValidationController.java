@@ -1,7 +1,10 @@
 package com.adtech.iaterap.backend.controller;
 
+import com.adtech.iaterap.backend.dto.ValidationReportResponse;
+import com.adtech.iaterap.backend.entity.ProcedureHistory;
 import com.adtech.iaterap.backend.entity.ValidationReading;
 import com.adtech.iaterap.backend.entity.ValidationRun;
+import com.adtech.iaterap.backend.repository.ProcedureHistoryRepository;
 import com.adtech.iaterap.backend.repository.ValidationReadingRepository;
 import com.adtech.iaterap.backend.repository.ValidationRunRepository;
 import com.adtech.iaterap.backend.service.ValidationIngestionService;
@@ -13,6 +16,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** API boundary for independent validation fixtures and discrepancy evidence. */
+/** API boundary for independent validation fixtures and discrepancy evidence (T13-B1, T13-B2). */
 @RestController
 @RequestMapping("/api/validation")
 public class ValidationController {
@@ -31,26 +35,34 @@ public class ValidationController {
     private final ValidationIngestionService ingestionService;
     private final ValidationRunRepository runRepository;
     private final ValidationReadingRepository readingRepository;
+    private final ProcedureHistoryRepository historyRepository;
     private final SyntheticFaultInjectionService syntheticFaultInjectionService;
 
     public ValidationController(
             ValidationIngestionService ingestionService,
             ValidationRunRepository runRepository,
             ValidationReadingRepository readingRepository,
+            ProcedureHistoryRepository historyRepository,
             SyntheticFaultInjectionService syntheticFaultInjectionService) {
         this.ingestionService = ingestionService;
         this.runRepository = runRepository;
         this.readingRepository = readingRepository;
+        this.historyRepository = historyRepository;
         this.syntheticFaultInjectionService = syntheticFaultInjectionService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER', 'TEST_ENGINEER')")
     @PostMapping("/runs/synthetic")
     public ValidationRun runSynthetic(
             @RequestParam Long procedureHistoryId,
             @RequestParam(defaultValue = "NOMINAL") SyntheticInjectionScenario scenario,
+            @RequestParam(required = false) String faultCategory,
+            @RequestParam(required = false) Long targetLruId,
+            @RequestParam(required = false) Long targetStepId,
             Principal principal) {
         String recordedBy = principal == null ? "SYSTEM" : principal.getName();
-        return syntheticFaultInjectionService.run(procedureHistoryId, scenario, recordedBy);
+        return syntheticFaultInjectionService.run(
+                procedureHistoryId, scenario, faultCategory, targetLruId, targetStepId, recordedBy);
     }
 
     @PostMapping(value = "/runs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -92,5 +104,25 @@ public class ValidationController {
             throw new ValidationFixtureException("Validation run not found: " + runId);
         }
         return readingRepository.findByValidationRunIdOrderBySourceRowNumberAsc(runId);
+    }
+
+    @GetMapping({"/runs/{runId}/report", "/reports/{runId}"})
+    public ValidationReportResponse getReport(@PathVariable Long runId) {
+        ValidationRun run = runRepository.findById(runId)
+                .orElseThrow(() -> new ValidationFixtureException("Validation run not found: " + runId));
+        ProcedureHistory history = historyRepository.findById(run.getProcedureHistoryId())
+                .orElse(null);
+        List<ValidationReading> readings = readingRepository.findByValidationRunIdOrderBySourceRowNumberAsc(runId);
+        return ValidationReportResponse.of(run, history, readings);
+    }
+
+    @GetMapping("/reports")
+    public List<ValidationReportResponse> listReports(@RequestParam Long procedureHistoryId) {
+        List<ValidationRun> runs = runRepository.findByProcedureHistoryIdOrderByUploadedAtDesc(procedureHistoryId);
+        return runs.stream().map(run -> {
+            ProcedureHistory history = historyRepository.findById(run.getProcedureHistoryId()).orElse(null);
+            List<ValidationReading> readings = readingRepository.findByValidationRunIdOrderBySourceRowNumberAsc(run.getId());
+            return ValidationReportResponse.of(run, history, readings);
+        }).toList();
     }
 }
