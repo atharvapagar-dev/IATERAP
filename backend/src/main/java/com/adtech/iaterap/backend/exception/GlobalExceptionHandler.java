@@ -2,6 +2,7 @@ package com.adtech.iaterap.backend.exception;
 
 import com.adtech.iaterap.backend.approval.InvalidApprovalTransitionException;
 import com.adtech.iaterap.backend.approval.CoverageThresholdNotMetException;
+import com.adtech.iaterap.backend.ai.AiAdvisoryUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -176,6 +177,17 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
+    @ExceptionHandler(AiAdvisoryUnavailableException.class)
+    public ResponseEntity<ApiError> handleAiAdvisoryUnavailable(AiAdvisoryUnavailableException exception) {
+        ApiError apiError = new ApiError(
+                HttpStatus.BAD_GATEWAY.value(),
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                "AI advisory service is temporarily unavailable.",
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(apiError);
     }
 
     // --------- TEMPORARY DEBUGGING CODE ---------
