@@ -35,6 +35,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Set up Python for FastAPI integration tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: ai-service/requirements.txt
+
+      - name: Install AI service test dependencies
+        run: python -m pip install --requirement ai-service/requirements.txt
+
       - name: Run backend test suite
         working-directory: backend
         env:
