@@ -25,6 +25,10 @@ public class SyntheticLruInstance {
     @Column(name = "lru_id", nullable = false)
     private Long lruId;
 
+    /** Aircraft on which this simulated LRU instance is installed. */
+    @Column(name = "aircraft_id", nullable = false)
+    private Long aircraftId;
+
     @NotBlank
     @Column(name = "instance_code", nullable = false, unique = true)
     private String instanceCode;
@@ -44,13 +48,16 @@ public class SyntheticLruInstance {
 
     public SyntheticLruInstance() { }
 
-    public SyntheticLruInstance(Long lruId, String instanceCode, Long generatorSeed) {
+    public SyntheticLruInstance(Long aircraftId, Long lruId, String instanceCode, Long generatorSeed) {
+        this.aircraftId = aircraftId;
         this.lruId = lruId;
         this.instanceCode = instanceCode;
         this.generatorSeed = generatorSeed;
     }
 
     public Long getId() { return id; }
+    public Long getAircraftId() { return aircraftId; }
+    public void setAircraftId(Long aircraftId) { this.aircraftId = aircraftId; }
     public Long getLruId() { return lruId; }
     public void setLruId(Long lruId) { this.lruId = lruId; }
     public String getInstanceCode() { return instanceCode; }

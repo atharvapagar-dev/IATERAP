@@ -13,4 +13,6 @@ public interface ProcedureHistoryRepository extends JpaRepository<ProcedureHisto
     Optional<ProcedureHistory> findByTestProcedureIdAndVersionNumber(Long testProcedureId, Integer versionNumber);
 
     Optional<ProcedureHistory> findTopByTestProcedureIdOrderByVersionNumberDesc(Long testProcedureId);
+
+    List<ProcedureHistory> findByLruIdOrderByCreatedAtAsc(Long lruId);
 }

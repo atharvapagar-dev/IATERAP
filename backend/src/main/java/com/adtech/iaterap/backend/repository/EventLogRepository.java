@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventLogRepository extends JpaRepository<EventLog, Long> {
     List<EventLog> findByLruIdAndEventTypeAndTimestampBetweenOrderByTimestampDesc(
             Long lruId, String eventType, LocalDateTime from, LocalDateTime to);
+
+    boolean existsBySyntheticLruInstanceIdAndSourceValidationRunIdAndEventType(
+            Long syntheticLruInstanceId, Long sourceValidationRunId, String eventType);
 }

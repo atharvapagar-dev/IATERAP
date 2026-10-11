@@ -39,6 +39,8 @@ class SyntheticEventStorageContractTest {
         assertTrue(tableExists("synthetic_lru_instance"));
         assertTrue(tableExists("event_log"));
         assertEquals("lru", foreignKeyTarget("synthetic_lru_instance", "lru_id"));
+        assertEquals("aircraft", foreignKeyTarget("synthetic_lru_instance", "aircraft_id"));
+        assertEquals("validation_runs", foreignKeyTarget("event_log", "source_validation_run_id"));
         assertTrue(indexDefinitions("event_log").stream()
                 .map(value -> value.toLowerCase(Locale.ROOT))
                 .anyMatch(value -> value.contains("lru_id")

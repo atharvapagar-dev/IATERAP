@@ -20,3 +20,5 @@ class UnusedTestBlockAdvisoryRuleTest {
         assertEquals(List.of("Reusable setup"), result.getDetails().get("unusedBlockNames"));
     }
 }
+
+

@@ -31,6 +31,9 @@ public class EventLog {
     @Column(name = "lru_id", nullable = false, updatable = false)
     private Long lruId;
 
+    @Column(name = "source_validation_run_id", updatable = false)
+    private Long sourceValidationRunId;
+
     @NotBlank
     @Column(name = "event_type", nullable = false, updatable = false)
     private String eventType;
@@ -55,10 +58,12 @@ public class EventLog {
 
     protected EventLog() { }
 
-    public EventLog(Long syntheticLruInstanceId, Long lruId, String eventType,
-                    String severity, LocalDateTime timestamp, String payload, String generatedBy) {
+    public EventLog(Long syntheticLruInstanceId, Long lruId, Long sourceValidationRunId,
+                    String eventType, String severity, LocalDateTime timestamp,
+                    String payload, String generatedBy) {
         this.syntheticLruInstanceId = syntheticLruInstanceId;
         this.lruId = lruId;
+        this.sourceValidationRunId = sourceValidationRunId;
         this.eventType = eventType;
         this.severity = severity;
         this.timestamp = timestamp;
@@ -69,6 +74,7 @@ public class EventLog {
     public Long getId() { return id; }
     public Long getSyntheticLruInstanceId() { return syntheticLruInstanceId; }
     public Long getLruId() { return lruId; }
+    public Long getSourceValidationRunId() { return sourceValidationRunId; }
     public String getEventType() { return eventType; }
     public String getSeverity() { return severity; }
     public LocalDateTime getTimestamp() { return timestamp; }
