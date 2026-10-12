@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SyntheticLruInstanceRepository extends JpaRepository<SyntheticLruInstance, Long> {
     List<SyntheticLruInstance> findByLruIdAndLifecycleStatus(Long lruId, String lifecycleStatus);
     Optional<SyntheticLruInstance> findByInstanceCode(String instanceCode);
+    Optional<SyntheticLruInstance> findByAircraftIdAndLruIdAndInstanceCode(
+            Long aircraftId, Long lruId, String instanceCode);
 }

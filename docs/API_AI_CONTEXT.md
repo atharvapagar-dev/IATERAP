@@ -78,3 +78,33 @@ this endpoint.
 - Unsupported methods return `405` and never reach a write service.
 - The response is a DTO snapshot, not a JPA entity, so consumers cannot mutate
   persisted relationships through deserialization.
+
+## AI service isolation sequence (AI-250)
+
+```mermaid
+sequenceDiagram
+    actor Engineer as Test Engineer
+    participant UI as IATERAP Web UI
+    participant API as Spring Boot API
+    participant Context as Read-only Context Service
+    participant AI as FastAPI Advisory Service
+    participant DB as PostgreSQL
+
+    Engineer->>UI: Request an advisory
+    UI->>API: Authenticated request
+    API->>Context: Build procedure/coverage DTO
+    Context->>DB: Read procedure, steps, rule evidence
+    DB-->>Context: Persisted facts only
+    Context-->>API: Versioned read-only DTO
+    API->>AI: HTTP request with structured context
+    AI-->>API: Explainable recommendation + confidence
+    API-->>UI: Advisory response for human review
+    Note over AI,DB: No AI database credentials or direct DB connection
+    Note over AI,API: AI cannot create, approve, or alter engineering records
+```
+
+The Spring application owns authentication, authorization, persistence, and
+all write workflows. FastAPI is an independently deployed decision-support
+service. It receives an explicit DTO over HTTP and returns a recommendation;
+the Test Engineer remains responsible for reviewing it through the normal
+procedure and approval workflow.
