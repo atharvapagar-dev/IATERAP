@@ -186,4 +186,29 @@ def test_openapi_schema_exposes_all_endpoints():
     assert "/health" in paths
     assert "/suggest" in paths
     assert "/advisory/recommendations" in paths
+    assert "/advisory/gap-explanations" in paths
+    assert "/advisory/documentation-drafts" in paths
     assert "/context/test-procedure/{test_procedure_id}" in paths
+
+
+def test_gap_explanation_is_explicit_about_supplied_gaps_and_review():
+    response = client.post("/advisory/gap-explanations", json={
+        "test_procedure_id": 42, "procedure_name": "Altitude check",
+        "gaps": [{"element_type": "SIGNAL", "element_id": 7, "description": "Altitude discrete is unreferenced."}],
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert body["gap_count"] == 1
+    assert "Altitude discrete" in body["explanation"]
+    assert "verify" in body["disclaimer"].lower()
+
+
+def test_documentation_draft_is_not_an_approval_or_write_action():
+    response = client.post("/advisory/documentation-drafts", json={
+        "test_procedure_id": 42, "procedure_name": "Altitude check",
+        "review_outcome": "Changes requested", "findings": ["Missing altitude signal case"],
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert "Changes requested" in body["draft"]
+    assert "approve" in body["disclaimer"].lower()
