@@ -48,6 +48,6 @@ public class ReliabilityMetricsService {
         }} return new Measurement(sorties, failures, repairs, repairHours);
     }
     private record Measurement(double hours, long failures, long repairs, double repairHours) { }
-    private static final class Accumulator { final Long id; final String name; double hours, repairHours; long failures, repairs; Accumulator(Long id, String name) { this.id=id; this.name=name; } void add(Measurement m) { hours+=m.hours; failures+=m.failures; repairs+=m.repairs; repairHours+=m.repairHours; } ReliabilityMetricsResponse.MetricSummary response() { return new ReliabilityMetricsResponse.MetricSummary(id,name,hours,failures,repairs, failures == 0 ? null : round(hours / failures), repairs == 0 ? null : round(repairHours / repairs), hours == 0 ? null : round(failures / hours)); } }
+    private static final class Accumulator { final Long id; final String name; double hours, repairHours; long failures, repairs; Accumulator(Long id, String name) { this.id=id; this.name=name; } void add(Measurement m) { hours+=m.hours; failures+=m.failures; repairs+=m.repairs; repairHours+=m.repairHours; } ReliabilityMetricsResponse.MetricSummary response() { return new ReliabilityMetricsResponse.MetricSummary(id,name,hours,failures,repairs, hours == 0 || failures == 0 ? null : round(hours / failures), repairs == 0 ? null : round(repairHours / repairs), hours == 0 ? null : round(failures / hours)); } }
     private static double round(double value) { return Math.round(value * 100D) / 100D; }
 }
