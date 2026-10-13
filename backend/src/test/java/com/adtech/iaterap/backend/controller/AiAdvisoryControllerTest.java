@@ -12,6 +12,7 @@ import com.adtech.iaterap.backend.ai.AiAdvisoryUnavailableException;
 import com.adtech.iaterap.backend.dto.AiSuggestionResponse;
 import com.adtech.iaterap.backend.security.JwtFilter;
 import com.adtech.iaterap.backend.security.SecurityConfig;
+import com.adtech.iaterap.backend.service.AiSuggestionQueueService;
 import jakarta.servlet.FilterChain;
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,9 @@ class AiAdvisoryControllerTest {
 
     @MockBean
     private AiAdvisoryClient client;
+
+    @MockBean
+    private AiSuggestionQueueService aiSuggestionQueueService;
 
     @MockBean
     private JwtFilter jwtFilter;
