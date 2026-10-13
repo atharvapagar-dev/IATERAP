@@ -46,6 +46,7 @@ import AdminRuleConfigurationPage from "../pages/AdminRuleConfigurationPage";
 import CoverageDashboardPage from "../pages/CoverageDashboardPage";
 import ValidationReportsPage from "../pages/ValidationReportsPage";
 import ReliabilityDashboardPage from "../pages/ReliabilityDashboardPage";
+import AiSuggestionQueuePage from "../pages/AiSuggestionQueuePage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -396,6 +397,7 @@ function AppRoutes() {
                 path="/reliability-dashboard"
                 element={<ProtectedRoute><ReliabilityDashboardPage /></ProtectedRoute>}
             />
+            <Route path="/ai-suggestions" element={<ProtectedRoute><AiSuggestionQueuePage /></ProtectedRoute>} />
         </Routes>
     );
 }

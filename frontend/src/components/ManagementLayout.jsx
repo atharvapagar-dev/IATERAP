@@ -77,6 +77,9 @@ export default function ManagementLayout({
                     <Link to="/reliability-dashboard" style={linkStyle}>
                         Reliability Analytics
                     </Link>
+                    <Link to="/ai-suggestions" style={linkStyle}>
+                        AI Suggestions
+                    </Link>
                     <Link to="/health" style={linkStyle}>
                         Health
                     </Link>
