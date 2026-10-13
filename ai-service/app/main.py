@@ -13,6 +13,11 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from app.advisory_models import AdvisoryRecommendationRequest, AdvisoryRecommendationResponse
 from app.advisory_service import recommend
+from app.drafting_models import (
+    DocumentationDraftRequest, DocumentationDraftResponse,
+    GapExplanationRequest, GapExplanationResponse,
+)
+from app.drafting_service import draft_review_note, explain_gaps
 
 from app.context_models import (
     CONTEXT_CONTRACT_VERSION,
@@ -80,6 +85,18 @@ def advisory_recommendations(
     generative model and not an automatic approval or procedure mutation.
     """
     return recommend(request)
+
+
+@app.post("/advisory/gap-explanations", response_model=GapExplanationResponse, tags=["advisory"])
+def gap_explanations(request: GapExplanationRequest) -> GapExplanationResponse:
+    """Explain caller-supplied coverage gaps; never changes procedure content."""
+    return explain_gaps(request)
+
+
+@app.post("/advisory/documentation-drafts", response_model=DocumentationDraftResponse, tags=["advisory"])
+def documentation_drafts(request: DocumentationDraftRequest) -> DocumentationDraftResponse:
+    """Produce a review-note draft that remains subject to engineer approval."""
+    return draft_review_note(request)
 
 
 @app.get(
