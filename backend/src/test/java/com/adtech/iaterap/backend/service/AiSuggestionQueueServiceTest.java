@@ -12,6 +12,7 @@ import com.adtech.iaterap.backend.entity.AiSuggestionQueueItem;
 import com.adtech.iaterap.backend.entity.AiSuggestionStatus;
 import com.adtech.iaterap.backend.repository.AiSuggestionQueueRepository;
 import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,6 +74,20 @@ class AiSuggestionQueueServiceTest {
 
         assertThrows(IllegalStateException.class,
                 () -> service.decide(11L, AiSuggestionStatus.DISMISSED, "engineer.a"));
+    }
+
+    @Test
+    void returnsOnlyAcceptedSuggestionsForTheCurrentEngineersProcedure() {
+        AiSuggestionQueueItem item = pendingItem("engineer.a");
+        item.setStatus(AiSuggestionStatus.ACCEPTED);
+        item.setTestProcedureId(42L);
+        when(repository.findByRequestedByAndTestProcedureIdAndStatusOrderByDecidedAtDesc(
+                "engineer.a", 42L, AiSuggestionStatus.ACCEPTED)).thenReturn(List.of(item));
+
+        var accepted = service.acceptedForProcedure(42L, "engineer.a");
+
+        assertEquals(1, accepted.size());
+        assertEquals("ACCEPTED", accepted.getFirst().status());
     }
 
     private AiSuggestionQueueItem pendingItem(String requestedBy) {

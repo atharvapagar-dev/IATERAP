@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Authenticated backend façade for a structured FastAPI advisory suggestion. */
@@ -38,6 +39,8 @@ public class AiAdvisoryController {
     public AiSuggestionQueueResponse queue(@Valid @RequestBody AiSuggestionRequest request, Principal principal) { return queueService.enqueue(request, principal.getName()); }
     @GetMapping("/suggestions/queue")
     public List<AiSuggestionQueueResponse> queue(Principal principal) { return queueService.pending(principal.getName()); }
+    @GetMapping("/suggestions/accepted")
+    public List<AiSuggestionQueueResponse> accepted(@RequestParam Long procedureId, Principal principal) { return queueService.acceptedForProcedure(procedureId, principal.getName()); }
     @PostMapping("/suggestions/{id}/accept")
     public AiSuggestionQueueResponse accept(@PathVariable Long id, Principal principal) { return queueService.decide(id, AiSuggestionStatus.ACCEPTED, principal.getName()); }
     @PostMapping("/suggestions/{id}/dismiss")

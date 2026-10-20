@@ -25,6 +25,10 @@ public class AiSuggestionQueueService {
         return AiSuggestionQueueResponse.from(repository.save(item));
     }
     public List<AiSuggestionQueueResponse> pending(String engineer) { return repository.findByRequestedByAndStatusOrderByCreatedAtDesc(engineer, AiSuggestionStatus.PENDING).stream().map(AiSuggestionQueueResponse::from).toList(); }
+    public List<AiSuggestionQueueResponse> acceptedForProcedure(Long procedureId, String engineer) {
+        return repository.findByRequestedByAndTestProcedureIdAndStatusOrderByDecidedAtDesc(engineer, procedureId, AiSuggestionStatus.ACCEPTED)
+                .stream().map(AiSuggestionQueueResponse::from).toList();
+    }
     @Transactional
     public AiSuggestionQueueResponse decide(Long id, AiSuggestionStatus decision, String engineer) {
         if (decision == AiSuggestionStatus.PENDING) throw new IllegalArgumentException("A queue item must be accepted or dismissed");

@@ -14,6 +14,7 @@ import { protocolTagService } from "../services/protocolTagService";
 import { faultTemplateService } from "../services/faultTemplateService";
 import { versionComparisonService } from "../services/versionComparisonService";
 import CoverageSummaryCard from "../components/CoverageSummaryCard";
+import api from "../services/api";
 
 let tempKeyCounter = 0;
 
@@ -58,6 +59,7 @@ export default function ProcedureBuilderPage() {
     const [coverage, setCoverage] = useState(null);
     const [coverageLoading, setCoverageLoading] = useState(false);
     const [coverageError, setCoverageError] = useState("");
+    const [acceptedSuggestions, setAcceptedSuggestions] = useState([]);
 
     const loadAll = useCallback(async () => {
         try {
@@ -84,6 +86,8 @@ export default function ProcedureBuilderPage() {
                     approvalStatus: procedure.approvalStatus,
                     versionNumber: procedure.versionNumber,
                 });
+                const suggestionsRes = await api.get("/ai/suggestions/accepted", { params: { procedureId: id } });
+                setAcceptedSuggestions(suggestionsRes.data);
             }
         } catch (fetchError) {
             console.error("Failed to load Procedure Builder data:", fetchError);
@@ -118,6 +122,18 @@ export default function ProcedureBuilderPage() {
                 i === index ? { ...s, ...payload } : s
             )
         );
+    };
+
+    const applyAcceptedSuggestion = (suggestion) => {
+        const stepIndex = steps.findIndex((step) => Number(step.id) === Number(suggestion.testStepId));
+        if (stepIndex < 0) {
+            setError("This accepted suggestion is not linked to a current step in this procedure.");
+            return;
+        }
+        const attribution = `AI suggestion accepted by ${suggestion.decidedBy} on ${new Date(suggestion.decidedAt).toLocaleString()}: ${suggestion.suggestion}`;
+        setSteps((current) => current.map((step, index) => index === stepIndex ? { ...step, engineerRemarks: step.engineerRemarks ? `${step.engineerRemarks}\n${attribution}` : attribution } : step));
+        setAcceptedSuggestions((current) => current.filter((item) => item.id !== suggestion.id));
+        setSuccessMessage("Accepted suggestion applied locally. Save the procedure to create the attributable revision.");
     };
 
     const handleDeleteStep = (index) => {
@@ -411,6 +427,19 @@ export default function ProcedureBuilderPage() {
                     : "A Test Procedure belongs to a single LRU; its Test Steps can only reference that LRU's own Interfaces, Connectors, Signals, Protocol Tags and Fault Templates. At least one Test Step is required."
             }
         >
+            {isEditing && acceptedSuggestions.length ? (
+                <section className="form-card">
+                    <h2>Accepted AI suggestions</h2>
+                    <p className="helper-text">Apply a suggestion to the unsaved draft, then save to create the formal attributable revision.</p>
+                    {acceptedSuggestions.map((suggestion) => (
+                        <article key={suggestion.id} className="page-card" style={{ margin: "10px 0 0" }}>
+                            <p>{suggestion.suggestion}</p>
+                            <p className="helper-text">Step {suggestion.testStepId ?? "not specified"} · accepted by {suggestion.decidedBy}</p>
+                            <button onClick={() => applyAcceptedSuggestion(suggestion)} disabled={!suggestion.testStepId}>Apply to step remarks</button>
+                        </article>
+                    ))}
+                </section>
+            ) : null}
             {error ? (
                 <p style={{ color: "var(--danger)" }}>
                     {error}
