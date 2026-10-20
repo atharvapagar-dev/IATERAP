@@ -20,6 +20,7 @@ function Metric({ label, value, emphasis = false }) {
 
 export default function ReliabilityDashboardPage() {
     const [dashboard, setDashboard] = useState(null);
+    const [reports, setReports] = useState([]);
     const [aircraft, setAircraft] = useState([]);
     const [aircraftId, setAircraftId] = useState("");
     const [generationMessage, setGenerationMessage] = useState("");
@@ -33,6 +34,7 @@ export default function ReliabilityDashboardPage() {
                     ? "Reliability analytics is available to reliability engineers, system engineers, and administrators."
                     : "Unable to load reliability analytics.");
             });
+        api.get("/reliability/reports/current").then((response) => setReports(response.data)).catch(() => {});
         aircraftService.getAllAircraft().then((response) => {
             setAircraft(response.data);
             if (response.data.length) setAircraftId(String(response.data[0].id));
@@ -87,6 +89,11 @@ export default function ReliabilityDashboardPage() {
                     <table className="coverage-table"><thead><tr><th>LRU</th><th>Runs</th><th>Findings</th><th>Rate</th><th>Breakdown</th><th>Trend</th><th>Evidence</th></tr></thead><tbody>
                         {dashboard.lrus.map((lru) => <tr key={lru.lruId}><td>{lru.lruName}</td><td>{lru.totalRuns}</td><td>{lru.findings}</td><td>{lru.findingRate}%</td><td>{lru.mismatches} mismatch · {lru.outliers} outlier · {lru.missing} missing</td><td><span className="status-pill">{trendLabel[lru.trend] || lru.trend}</span></td><td>{lru.evidenceSources.join(" + ")}</td></tr>)}
                     </tbody></table>}
+            </section>
+            <section className="page-card">
+                <div className="section-heading"><div><p className="eyebrow">Persisted monthly projection</p><h2 className="section-title">Reliability reporting table</h2></div></div>
+                {!reports.length ? <p className="helper-text">No current-period report has been generated yet. The scheduled reporting job refreshes this synthetic evidence projection nightly.</p> :
+                    <table className="coverage-table"><thead><tr><th>LRU</th><th>Hours</th><th>Failures</th><th>Repairs</th><th>MTBF</th><th>MTTR</th><th>Failure rate</th></tr></thead><tbody>{reports.map((report) => <tr key={report.lruId}><td>{report.lruName}</td><td>{report.operatingHours}</td><td>{report.failures}</td><td>{report.repairs}</td><td>{report.mtbfHours ?? "—"}</td><td>{report.mttrHours ?? "—"}</td><td>{report.failureRatePerHour ?? "—"}</td></tr>)}</tbody></table>}
             </section>
             <p className="helper-text">Trend compares the earlier and more recent halves of an LRU’s evidence history. At least four runs are required before a direction is shown.</p>
         </> : null}
