@@ -2,8 +2,11 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.dto.ReliabilityDashboardResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse;
+import com.adtech.iaterap.backend.dto.ReliabilityReportResponse;
 import com.adtech.iaterap.backend.service.ReliabilityAnalyticsService;
 import com.adtech.iaterap.backend.service.ReliabilityMetricsService;
+import com.adtech.iaterap.backend.service.ReliabilityReportingService;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReliabilityAnalyticsController {
     private final ReliabilityAnalyticsService service;
     private final ReliabilityMetricsService metricsService;
+    private final ReliabilityReportingService reportingService;
 
-    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService) {
+    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService, ReliabilityReportingService reportingService) {
         this.service = service;
         this.metricsService = metricsService;
+        this.reportingService = reportingService;
     }
 
     @GetMapping("/dashboard")
@@ -29,4 +34,6 @@ public class ReliabilityAnalyticsController {
 
     @GetMapping("/metrics")
     public ReliabilityMetricsResponse metrics() { return metricsService.metrics(); }
+    @GetMapping("/reports/current")
+    public List<ReliabilityReportResponse> currentReports() { return reportingService.currentPeriod(); }
 }
