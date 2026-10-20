@@ -48,6 +48,17 @@ class ReliabilityMetricsServiceTest {
         assertNull(metric.mtbfHours()); assertNull(metric.failureRatePerHour());
     }
 
+    @Test
+    void usesHandComputedZeroFailureRateWhenOperatingHoursExist() {
+        LocalDateTime at = LocalDateTime.of(2026, 1, 1, 8, 0);
+        SyntheticLruInstance instance = new SyntheticLruInstance(100L, 1L, "SYN-1", 1L); id(instance, 10L);
+        Lru lru = new Lru("Flight Computer"); id(lru, 1L);
+        when(instances.findAll()).thenReturn(List.of(instance)); when(lrus.findAll()).thenReturn(List.of(lru)); when(aircraft.findAll()).thenReturn(List.of());
+        when(events.findAll()).thenReturn(List.of(event(10L, 1L, "SORTIE_COMPLETED", at), event(10L, 1L, "SORTIE_COMPLETED", at.plusHours(1))));
+        var metric = service.metrics().lrus().getFirst();
+        assertEquals(2D, metric.operatingHours()); assertNull(metric.mtbfHours()); assertEquals(0D, metric.failureRatePerHour());
+    }
+
     private static void assertMetric(com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse.MetricSummary metric) { assertEquals(2D, metric.operatingHours()); assertEquals(1L, metric.failures()); assertEquals(1L, metric.repairs()); assertEquals(2D, metric.mtbfHours()); assertEquals(0.5D, metric.mttrHours()); assertEquals(0.5D, metric.failureRatePerHour()); }
     private static EventLog event(Long instanceId, Long lruId, String type, LocalDateTime at) { return new EventLog(instanceId, lruId, 1L, type, "INFO", at, "{}", "test"); }
     private static void id(Object entity, Long value) { ReflectionTestUtils.setField(entity, "id", value); }
