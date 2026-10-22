@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ManagementLayout from "../components/ManagementLayout";
 import api from "../services/api";
 import { aircraftService } from "../services/aircraftService";
@@ -21,6 +22,7 @@ function Metric({ label, value, emphasis = false }) {
 export default function ReliabilityDashboardPage() {
     const [dashboard, setDashboard] = useState(null);
     const [reports, setReports] = useState([]);
+    const [pareto, setPareto] = useState(null);
     const [aircraft, setAircraft] = useState([]);
     const [aircraftId, setAircraftId] = useState("");
     const [generationMessage, setGenerationMessage] = useState("");
@@ -35,6 +37,7 @@ export default function ReliabilityDashboardPage() {
                     : "Unable to load reliability analytics.");
             });
         api.get("/reliability/reports/current").then((response) => setReports(response.data)).catch(() => {});
+        api.get("/reliability/pareto-hfra").then((response) => setPareto(response.data)).catch(() => {});
         aircraftService.getAllAircraft().then((response) => {
             setAircraft(response.data);
             if (response.data.length) setAircraftId(String(response.data[0].id));
@@ -89,6 +92,14 @@ export default function ReliabilityDashboardPage() {
                     <table className="coverage-table"><thead><tr><th>LRU</th><th>Runs</th><th>Findings</th><th>Rate</th><th>Breakdown</th><th>Trend</th><th>Evidence</th></tr></thead><tbody>
                         {dashboard.lrus.map((lru) => <tr key={lru.lruId}><td>{lru.lruName}</td><td>{lru.totalRuns}</td><td>{lru.findings}</td><td>{lru.findingRate}%</td><td>{lru.mismatches} mismatch · {lru.outliers} outlier · {lru.missing} missing</td><td><span className="status-pill">{trendLabel[lru.trend] || lru.trend}</span></td><td>{lru.evidenceSources.join(" + ")}</td></tr>)}
                     </tbody></table>}
+            </section>
+            <section className="page-card">
+                <div className="section-heading"><div><p className="eyebrow">Failure contribution</p><h2 className="section-title">Pareto and HFRA detection</h2></div></div>
+                {!pareto?.items?.length ? <p className="helper-text">No persisted synthetic failure events are available for Pareto analysis yet.</p> : <>
+                    <p className="helper-text">HFRA threshold: {pareto.hfraThreshold} failures (mean plus one standard deviation). Repeat means two or more recorded failures.</p>
+                    <div style={{ width: "100%", height: 300 }}><ResponsiveContainer><BarChart data={pareto.items}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="lruName" /><YAxis /><Tooltip /><Legend /><Bar dataKey="failures" fill="#e26d5a" name="Failures" /><Bar dataKey="contributionPercent" fill="#5a8de2" name="Contribution %" /></BarChart></ResponsiveContainer></div>
+                    <table className="coverage-table"><thead><tr><th>LRU</th><th>Failures</th><th>Contribution</th><th>Cumulative</th><th>Repeat</th><th>HFRA</th></tr></thead><tbody>{pareto.items.map((item) => <tr key={item.lruId}><td>{item.lruName}</td><td>{item.failures}</td><td>{item.contributionPercent}%</td><td>{item.cumulativePercent}%</td><td>{item.repeatFailure ? "Yes" : "No"}</td><td>{item.hfraFlag ? "Flagged" : "—"}</td></tr>)}</tbody></table>
+                </>}
             </section>
             <section className="page-card">
                 <div className="section-heading"><div><p className="eyebrow">Persisted monthly projection</p><h2 className="section-title">Reliability reporting table</h2></div></div>
