@@ -4,6 +4,7 @@ import com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse;
 import com.adtech.iaterap.backend.entity.*;
 import com.adtech.iaterap.backend.repository.*;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -19,11 +20,21 @@ public class ReliabilityMetricsService {
 
     @Transactional(readOnly = true)
     public ReliabilityMetricsResponse metrics() {
+        return metrics(null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public ReliabilityMetricsResponse metrics(LocalDate periodStart, LocalDate periodEnd) {
         Map<Long, SyntheticLruInstance> instanceById = new HashMap<>(); instances.findAll().forEach(i -> instanceById.put(i.getId(), i));
         Map<Long, Lru> lruById = new HashMap<>(); lrus.findAll().forEach(l -> lruById.put(l.getId(), l));
         Map<Long, Aircraft> aircraftById = new HashMap<>(); aircraft.findAll().forEach(a -> aircraftById.put(a.getId(), a));
         Map<Long, List<EventLog>> byInstance = new HashMap<>();
-        for (EventLog event : events.findAll()) byInstance.computeIfAbsent(event.getSyntheticLruInstanceId(), key -> new ArrayList<>()).add(event);
+        for (EventLog event : events.findAll()) {
+            LocalDate eventDate = event.getTimestamp().toLocalDate();
+            if ((periodStart == null || !eventDate.isBefore(periodStart)) && (periodEnd == null || !eventDate.isAfter(periodEnd))) {
+                byInstance.computeIfAbsent(event.getSyntheticLruInstanceId(), key -> new ArrayList<>()).add(event);
+            }
+        }
         Map<Long, Accumulator> lruMetrics = new HashMap<>(), subsystemMetrics = new HashMap<>(), aircraftMetrics = new HashMap<>();
         for (var entry : byInstance.entrySet()) {
             SyntheticLruInstance instance = instanceById.get(entry.getKey()); if (instance == null) continue;

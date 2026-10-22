@@ -2,8 +2,12 @@ package com.adtech.iaterap.backend.controller;
 
 import com.adtech.iaterap.backend.dto.ReliabilityDashboardResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse;
+import com.adtech.iaterap.backend.dto.ReliabilityMetricSeriesResponse;
+import com.adtech.iaterap.backend.dto.ReliabilityReportResponse;
 import com.adtech.iaterap.backend.service.ReliabilityAnalyticsService;
 import com.adtech.iaterap.backend.service.ReliabilityMetricsService;
+import com.adtech.iaterap.backend.service.ReliabilityReportingService;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,10 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReliabilityAnalyticsController {
     private final ReliabilityAnalyticsService service;
     private final ReliabilityMetricsService metricsService;
+    private final ReliabilityReportingService reportingService;
 
-    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService) {
+    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService, ReliabilityReportingService reportingService) {
         this.service = service;
         this.metricsService = metricsService;
+        this.reportingService = reportingService;
     }
 
     @GetMapping("/dashboard")
@@ -29,4 +35,21 @@ public class ReliabilityAnalyticsController {
 
     @GetMapping("/metrics")
     public ReliabilityMetricsResponse metrics() { return metricsService.metrics(); }
+    @GetMapping("/mtbf")
+    public ReliabilityMetricSeriesResponse mtbf() { return series("MTBF_HOURS", ReliabilityMetricsResponse.MetricSummary::mtbfHours); }
+    @GetMapping("/mttr")
+    public ReliabilityMetricSeriesResponse mttr() { return series("MTTR_HOURS", ReliabilityMetricsResponse.MetricSummary::mttrHours); }
+    @GetMapping("/failure-rate")
+    public ReliabilityMetricSeriesResponse failureRate() { return series("FAILURE_RATE_PER_HOUR", ReliabilityMetricsResponse.MetricSummary::failureRatePerHour); }
+    @GetMapping("/reports/current")
+    public List<ReliabilityReportResponse> currentReports() { return reportingService.currentPeriod(); }
+
+    private ReliabilityMetricSeriesResponse series(String metric, java.util.function.Function<ReliabilityMetricsResponse.MetricSummary, Double> extractor) {
+        ReliabilityMetricsResponse metrics = metricsService.metrics();
+        return new ReliabilityMetricSeriesResponse(metrics.generatedAt(), metric,
+                values(metrics.lrus(), extractor), values(metrics.subsystems(), extractor), values(metrics.aircraft(), extractor));
+    }
+    private List<ReliabilityMetricSeriesResponse.MetricValue> values(List<ReliabilityMetricsResponse.MetricSummary> source, java.util.function.Function<ReliabilityMetricsResponse.MetricSummary, Double> extractor) {
+        return source.stream().map(item -> new ReliabilityMetricSeriesResponse.MetricValue(item.id(), item.name(), extractor.apply(item))).toList();
+    }
 }
