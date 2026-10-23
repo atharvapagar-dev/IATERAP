@@ -4,9 +4,11 @@ import com.adtech.iaterap.backend.dto.ReliabilityDashboardResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityMetricSeriesResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityReportResponse;
+import com.adtech.iaterap.backend.dto.ParetoHfraResponse;
 import com.adtech.iaterap.backend.service.ReliabilityAnalyticsService;
 import com.adtech.iaterap.backend.service.ReliabilityMetricsService;
 import com.adtech.iaterap.backend.service.ReliabilityReportingService;
+import com.adtech.iaterap.backend.service.ParetoHfraService;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,11 +23,13 @@ public class ReliabilityAnalyticsController {
     private final ReliabilityAnalyticsService service;
     private final ReliabilityMetricsService metricsService;
     private final ReliabilityReportingService reportingService;
+    private final ParetoHfraService paretoHfraService;
 
-    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService, ReliabilityReportingService reportingService) {
+    public ReliabilityAnalyticsController(ReliabilityAnalyticsService service, ReliabilityMetricsService metricsService, ReliabilityReportingService reportingService, ParetoHfraService paretoHfraService) {
         this.service = service;
         this.metricsService = metricsService;
         this.reportingService = reportingService;
+        this.paretoHfraService = paretoHfraService;
     }
 
     @GetMapping("/dashboard")
@@ -43,6 +47,8 @@ public class ReliabilityAnalyticsController {
     public ReliabilityMetricSeriesResponse failureRate() { return series("FAILURE_RATE_PER_HOUR", ReliabilityMetricsResponse.MetricSummary::failureRatePerHour); }
     @GetMapping("/reports/current")
     public List<ReliabilityReportResponse> currentReports() { return reportingService.currentPeriod(); }
+    @GetMapping("/pareto-hfra")
+    public ParetoHfraResponse paretoHfra() { return paretoHfraService.analyse(); }
 
     private ReliabilityMetricSeriesResponse series(String metric, java.util.function.Function<ReliabilityMetricsResponse.MetricSummary, Double> extractor) {
         ReliabilityMetricsResponse metrics = metricsService.metrics();
