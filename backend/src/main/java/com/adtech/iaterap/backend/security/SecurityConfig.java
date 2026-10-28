@@ -51,6 +51,11 @@ public class SecurityConfig {
                         "/v3/api-docs/**"
                 ).permitAll()
 
+                // AI context is an authenticated, read-only boundary. Keep
+                // unsupported verbs visible to Spring MVC so it can return
+                // the accurate 405 contract instead of a role-based 403.
+                .requestMatchers("/api/ai/context/**").authenticated()
+
                 // VIEWER is intentionally read-only. Individual controllers
                 // impose stricter reviewer/admin gates where the domain needs it.
                 .requestMatchers(
