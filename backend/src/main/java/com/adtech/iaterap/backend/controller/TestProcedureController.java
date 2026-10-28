@@ -3,6 +3,7 @@ package com.adtech.iaterap.backend.controller;
 import com.adtech.iaterap.backend.dto.ProcedureHistoryResponse;
 import com.adtech.iaterap.backend.dto.TestProcedureRequest;
 import com.adtech.iaterap.backend.dto.TestProcedureResponse;
+import com.adtech.iaterap.backend.dto.ApiResponse;
 import com.adtech.iaterap.backend.service.TestProcedureService;
 import com.adtech.iaterap.backend.service.ProcedureSnapshotService;
 import com.adtech.iaterap.backend.entity.ProcedureSnapshot;
@@ -12,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Comparator;
 
 /**
  * Minimal backend surface required by the Procedure Builder (PART L) and
@@ -36,77 +38,83 @@ public class TestProcedureController {
     }
 
     @GetMapping
-    public List<TestProcedureResponse> getAll() {
-        return service.getAll();
+    public ApiResponse<List<TestProcedureResponse>> getAll(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "50") int limit) {
+        return page(service.getAll(), cursor, limit);
     }
 
     @GetMapping("/by-lru/{lruId}")
-    public List<TestProcedureResponse> getByLru(@PathVariable Long lruId) {
-        return service.getByLru(lruId);
+    public ApiResponse<List<TestProcedureResponse>> getByLru(@PathVariable Long lruId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "50") int limit) {
+        return page(service.getByLru(lruId), cursor, limit);
     }
 
     @GetMapping("/{id}")
-    public TestProcedureResponse getById(@PathVariable Long id) {
-        return service.getById(id);
+    public ApiResponse<TestProcedureResponse> getById(@PathVariable Long id) {
+        return ApiResponse.of(service.getById(id));
     }
 
     @PostMapping
-    public TestProcedureResponse create(@Valid @RequestBody TestProcedureRequest request) {
-        return service.save(request);
+    public ApiResponse<TestProcedureResponse> create(@Valid @RequestBody TestProcedureRequest request) {
+        return ApiResponse.of(service.save(request));
     }
 
     @PutMapping("/{id}")
-    public TestProcedureResponse update(
+    public ApiResponse<TestProcedureResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody TestProcedureRequest request
     ) {
-        return service.update(id, request);
+        return ApiResponse.of(service.update(id, request));
     }
 
     @PostMapping("/{id}/submit-for-review")
-    public TestProcedureResponse submitForReview(@PathVariable Long id) {
-        return service.submitForReview(id);
+    public ApiResponse<TestProcedureResponse> submitForReview(@PathVariable Long id) {
+        return ApiResponse.of(service.submitForReview(id));
     }
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
-    public TestProcedureResponse approve(@PathVariable Long id) {
-        return service.approve(id);
+    public ApiResponse<TestProcedureResponse> approve(@PathVariable Long id) {
+        return ApiResponse.of(service.approve(id));
     }
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
-    public TestProcedureResponse reject(@PathVariable Long id) {
-        return service.reject(id);
+    public ApiResponse<TestProcedureResponse> reject(@PathVariable Long id) {
+        return ApiResponse.of(service.reject(id));
     }
 
     @GetMapping("/{id}/snapshots/{versionNumber}")
-    public ProcedureSnapshot getSnapshot(@PathVariable Long id, @PathVariable Integer versionNumber) {
-        return snapshotService.getSnapshot(id, versionNumber);
+    public ApiResponse<ProcedureSnapshot> getSnapshot(@PathVariable Long id, @PathVariable Integer versionNumber) {
+        return ApiResponse.of(snapshotService.getSnapshot(id, versionNumber));
     }
 
     @GetMapping("/{id}/coverage-reports/{versionNumber}")
-    public CoverageReport getCoverageReport(@PathVariable Long id, @PathVariable Integer versionNumber) {
-        return snapshotService.getReport(id, versionNumber);
+    public ApiResponse<CoverageReport> getCoverageReport(@PathVariable Long id, @PathVariable Integer versionNumber) {
+        return ApiResponse.of(snapshotService.getReport(id, versionNumber));
     }
 
     @GetMapping("/review-queue")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
-    public List<TestProcedureResponse> getReviewQueue() {
-        return service.getReviewQueue();
+    public ApiResponse<List<TestProcedureResponse>> getReviewQueue(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "50") int limit) {
+        return page(service.getReviewQueue(), cursor, limit);
     }
 
     @GetMapping("/{id}/history")
-    public List<ProcedureHistoryResponse> getHistory(@PathVariable Long id) {
-        return service.getHistory(id);
+    public ApiResponse<List<ProcedureHistoryResponse>> getHistory(@PathVariable Long id) {
+        return ApiResponse.of(service.getHistory(id));
     }
 
     @GetMapping("/{id}/history/{versionNumber}")
-    public ProcedureHistoryResponse getRevision(
+    public ApiResponse<ProcedureHistoryResponse> getRevision(
             @PathVariable Long id,
             @PathVariable Integer versionNumber
     ) {
-        return service.getRevision(id, versionNumber);
+        return ApiResponse.of(service.getRevision(id, versionNumber));
     }
 
     /**
@@ -124,10 +132,21 @@ public class TestProcedureController {
      * {@link #getRevision}.</p>
      */
     @PostMapping("/{id}/history/{versionNumber}/rollback")
-    public TestProcedureResponse rollback(
+    public ApiResponse<TestProcedureResponse> rollback(
             @PathVariable Long id,
             @PathVariable Integer versionNumber
     ) {
-        return service.rollbackToRevision(id, versionNumber);
+        return ApiResponse.of(service.rollbackToRevision(id, versionNumber));
+    }
+
+    private ApiResponse<List<TestProcedureResponse>> page(
+            List<TestProcedureResponse> procedures, Long cursor, int limit) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be between 1 and 100.");
+        List<TestProcedureResponse> eligible = procedures.stream()
+                .sorted(Comparator.comparing(TestProcedureResponse::getId))
+                .filter(procedure -> cursor == null || procedure.getId() > cursor).toList();
+        List<TestProcedureResponse> page = eligible.stream().limit(limit).toList();
+        Long nextCursor = eligible.size() > page.size() ? page.getLast().getId() : null;
+        return ApiResponse.page(page, page.size(), nextCursor == null ? null : nextCursor.toString());
     }
 }

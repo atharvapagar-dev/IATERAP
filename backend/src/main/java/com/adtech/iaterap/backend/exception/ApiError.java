@@ -8,6 +8,7 @@ public class ApiError {
     private int status;
     private String error;
     private String message;
+    private String code;
     private LocalDateTime timestamp;
     private Map<String, String> fieldErrors;
 
@@ -51,6 +52,10 @@ public class ApiError {
     public String getMessage() {
         return message;
     }
+
+    public String getCode() { return code; }
+
+    public void setCode(String code) { this.code = code; }
 
     public void setMessage(String message) {
         this.message = message;

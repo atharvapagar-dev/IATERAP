@@ -1,24 +1,26 @@
 import api from "./api";
 
+const unwrap = (request) => request.then((response) => ({ ...response, data: response.data.data }));
+
 export const testProcedureService = {
     getAllProcedures() {
-        return api.get("/procedures");
+        return unwrap(api.get("/procedures"));
     },
 
     getProcedureById(id) {
-        return api.get(`/procedures/${id}`);
+        return unwrap(api.get(`/procedures/${id}`));
     },
 
     getProceduresByLruId(lruId) {
-        return api.get(`/procedures/by-lru/${lruId}`);
+        return unwrap(api.get(`/procedures/by-lru/${lruId}`));
     },
 
     createProcedure(procedure) {
-        return api.post("/procedures", procedure);
+        return unwrap(api.post("/procedures", procedure));
     },
 
     updateProcedure(id, procedure) {
-        return api.put(`/procedures/${id}`, procedure);
+        return unwrap(api.put(`/procedures/${id}`, procedure));
     },
 
     deleteProcedure(id) {
@@ -26,19 +28,19 @@ export const testProcedureService = {
     },
 
     submitForReview(id) {
-        return api.post(`/procedures/${id}/submit-for-review`);
+        return unwrap(api.post(`/procedures/${id}/submit-for-review`));
     },
 
     approve(id) {
-        return api.post(`/procedures/${id}/approve`);
+        return unwrap(api.post(`/procedures/${id}/approve`));
     },
 
     reject(id) {
-        return api.post(`/procedures/${id}/reject`);
+        return unwrap(api.post(`/procedures/${id}/reject`));
     },
 
     getReviewQueue() {
-        return api.get(`/procedures/review-queue`);
+        return unwrap(api.get(`/procedures/review-queue`));
     },
 
     getSteps(procedureId) {
@@ -46,7 +48,7 @@ export const testProcedureService = {
     },
 
     getCoverage(procedureId) {
-        return api.get(`/procedures/${procedureId}/coverage`);
+        return unwrap(api.get(`/procedures/${procedureId}/coverage`));
     },
 
     addStep(procedureId, step) {
@@ -58,10 +60,10 @@ export const testProcedureService = {
     },
 
     getHistory(id) {
-        return api.get(`/procedures/${id}/history`);
+        return unwrap(api.get(`/procedures/${id}/history`));
     },
 
     getRevision(id, versionNumber) {
-        return api.get(`/procedures/${id}/history/${versionNumber}`);
+        return unwrap(api.get(`/procedures/${id}/history/${versionNumber}`));
     },
 };

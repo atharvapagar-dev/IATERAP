@@ -1,20 +1,22 @@
 import api from "./api";
 
+const unwrap = (request) => request.then((response) => ({ ...response, data: response.data.data }));
+
 export const adminRuleConfigurationService = {
     getAllRules() {
-        return api.get("/admin/rules");
+        return unwrap(api.get("/admin/rules"));
     },
 
     setEnabled(ruleId, enabled) {
-        return api.patch(`/admin/rules/${encodeURIComponent(ruleId)}/enabled`, {
+        return unwrap(api.patch(`/admin/rules/${encodeURIComponent(ruleId)}/enabled`, {
             enabled,
-        });
+        }));
     },
 
     setPriority(ruleId, priority) {
-        return api.patch(`/admin/rules/${encodeURIComponent(ruleId)}/priority`, {
+        return unwrap(api.patch(`/admin/rules/${encodeURIComponent(ruleId)}/priority`, {
             priority,
-        });
+        }));
     },
 
     getCoverageScoringConfiguration() {

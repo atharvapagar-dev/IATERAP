@@ -1,8 +1,10 @@
 import api from "./api";
 
+const unwrap = (request) => request.then((response) => ({ ...response, data: response.data.data }));
+
 export const versionComparisonService = {
     getHistory(procedureId) {
-        return api.get(`/procedures/${procedureId}/history`);
+        return unwrap(api.get(`/procedures/${procedureId}/history`));
     },
 
     compareVersions(procedureId, fromVersion, toVersion) {
@@ -12,6 +14,6 @@ export const versionComparisonService = {
     },
 
     rollbackToRevision(procedureId, versionNumber) {
-        return api.post(`/procedures/${procedureId}/history/${versionNumber}/rollback`);
+        return unwrap(api.post(`/procedures/${procedureId}/history/${versionNumber}/rollback`));
     },
 };
