@@ -113,6 +113,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("METHOD_NOT_ALLOWED");
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(apiError);
     }
 
@@ -127,6 +128,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("AUTHENTICATION_FAILED");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiError);
     }
 
@@ -139,6 +141,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("ACCESS_DENIED");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
     }
 
@@ -153,6 +156,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("INVALID_REQUEST");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
@@ -194,6 +198,7 @@ public class GlobalExceptionHandler {
                 "AI advisory service is temporarily unavailable.",
                 LocalDateTime.now()
         );
+        apiError.setCode("AI_ADVISORY_UNAVAILABLE");
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(apiError);
     }
 
@@ -213,6 +218,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("INTERNAL_ERROR");
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(apiError);

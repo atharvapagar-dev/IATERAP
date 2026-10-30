@@ -61,10 +61,11 @@ class AiAdvisoryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"test_procedure_id\":42,\"test_step_id\":7,\"prompt\":\"Check recovery\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestion").value("Use a controlled signal-recovery check."))
-                .andExpect(jsonPath("$.confidence").value(0.0))
-                .andExpect(jsonPath("$.source").value("stub"))
-                .andExpect(jsonPath("$.generated_at").exists());
+                .andExpect(jsonPath("$.data.suggestion").value("Use a controlled signal-recovery check."))
+                .andExpect(jsonPath("$.data.confidence").value(0.0))
+                .andExpect(jsonPath("$.data.source").value("stub"))
+                .andExpect(jsonPath("$.data.generated_at").exists())
+                .andExpect(jsonPath("$.meta").isMap());
     }
 
     @Test
@@ -74,6 +75,7 @@ class AiAdvisoryControllerTest {
         mvc.perform(post("/api/ai/suggestions").with(user("tester").roles("TEST_ENGINEER"))
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.message").value("AI advisory service is temporarily unavailable."));
+                .andExpect(jsonPath("$.message").value("AI advisory service is temporarily unavailable."))
+                .andExpect(jsonPath("$.code").value("AI_ADVISORY_UNAVAILABLE"));
     }
 }

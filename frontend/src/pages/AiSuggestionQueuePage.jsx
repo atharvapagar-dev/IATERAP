@@ -9,14 +9,14 @@ export default function AiSuggestionQueuePage() {
     const [prompt, setPrompt] = useState("");
     const [procedureId, setProcedureId] = useState("");
     const [stepId, setStepId] = useState("");
-    const load = () => api.get("/ai/suggestions/queue").then((r) => setItems(r.data)).catch(() => setMessage("Unable to load your suggestion queue.")).finally(() => setLoading(false));
+    const load = () => api.get("/ai/suggestions/queue").then((r) => setItems(r.data.data)).catch(() => setMessage("Unable to load your suggestion queue.")).finally(() => setLoading(false));
     useEffect(() => { load(); }, []);
     const requestSuggestion = async (event) => {
         event.preventDefault();
         if (!prompt.trim()) return;
         try {
             const response = await api.post("/ai/suggestions/queue", { prompt, test_procedure_id: procedureId ? Number(procedureId) : null, test_step_id: stepId ? Number(stepId) : null });
-            setItems((current) => [response.data, ...current]); setPrompt(""); setMessage("Suggestion added to your private review queue.");
+            setItems((current) => [response.data.data, ...current]); setPrompt(""); setMessage("Suggestion added to your private review queue.");
         } catch (error) { setMessage(error.response?.data?.message || "Unable to request a suggestion."); }
     };
     const decide = async (id, action) => {

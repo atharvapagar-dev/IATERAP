@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-/** Stable success envelope used by the public Procedure, Rule and Coverage APIs. */
+/** Stable success envelope used by the public API resources. */
 public record ApiResponse<T>(T data, Map<String, Object> meta, LocalDateTime timestamp) {
     public static <T> ApiResponse<T> of(T data) {
         return new ApiResponse<>(data, Map.of(), LocalDateTime.now());

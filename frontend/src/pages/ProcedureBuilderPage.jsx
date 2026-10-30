@@ -87,7 +87,7 @@ export default function ProcedureBuilderPage() {
                     versionNumber: procedure.versionNumber,
                 });
                 const suggestionsRes = await api.get("/ai/suggestions/accepted", { params: { procedureId: id } });
-                setAcceptedSuggestions(suggestionsRes.data);
+                setAcceptedSuggestions(suggestionsRes.data.data);
             }
         } catch (fetchError) {
             console.error("Failed to load Procedure Builder data:", fetchError);

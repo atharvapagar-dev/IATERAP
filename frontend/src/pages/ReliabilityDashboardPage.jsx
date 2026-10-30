@@ -30,14 +30,14 @@ export default function ReliabilityDashboardPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        api.get("/reliability/dashboard").then((response) => setDashboard(response.data))
+        api.get("/reliability/dashboard").then((response) => setDashboard(response.data.data))
             .catch((requestError) => {
                 setError(requestError.response?.status === 403
                     ? "Reliability analytics is available to reliability engineers, system engineers, and administrators."
                     : "Unable to load reliability analytics.");
             });
-        api.get("/reliability/reports/current").then((response) => setReports(response.data)).catch(() => {});
-        api.get("/reliability/pareto-hfra").then((response) => setPareto(response.data)).catch(() => {});
+        api.get("/reliability/reports/current").then((response) => setReports(response.data.data)).catch(() => {});
+        api.get("/reliability/pareto-hfra").then((response) => setPareto(response.data.data)).catch(() => {});
         aircraftService.getAllAircraft().then((response) => {
             setAircraft(response.data);
             if (response.data.length) setAircraftId(String(response.data[0].id));
@@ -53,7 +53,7 @@ export default function ReliabilityDashboardPage() {
             const result = response.data;
             setGenerationMessage(`Generated ${result.eventsCreated} synthetic event(s); ${result.eventsAlreadyPresent} already existed.`);
             const dashboardResponse = await api.get("/reliability/dashboard");
-            setDashboard(dashboardResponse.data);
+            setDashboard(dashboardResponse.data.data);
         } catch (requestError) {
             setGenerationMessage(requestError.response?.data?.message || "Unable to generate synthetic events.");
         } finally {

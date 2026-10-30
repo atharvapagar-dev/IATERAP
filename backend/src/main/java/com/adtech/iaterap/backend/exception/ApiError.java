@@ -61,6 +61,10 @@ public class ApiError {
         this.message = message;
     }
 
+    public String getCode() { return code; }
+
+    public void setCode(String code) { this.code = code; }
+
     public LocalDateTime getTimestamp() {
         return timestamp;
     }

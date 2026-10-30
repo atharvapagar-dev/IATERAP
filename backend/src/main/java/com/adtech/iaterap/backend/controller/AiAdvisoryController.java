@@ -4,6 +4,7 @@ import com.adtech.iaterap.backend.ai.AiAdvisoryClient;
 import com.adtech.iaterap.backend.dto.AiSuggestionRequest;
 import com.adtech.iaterap.backend.dto.AiSuggestionResponse;
 import com.adtech.iaterap.backend.dto.AiSuggestionQueueResponse;
+import com.adtech.iaterap.backend.dto.ApiResponse;
 import com.adtech.iaterap.backend.entity.AiSuggestionStatus;
 import com.adtech.iaterap.backend.service.AiSuggestionQueueService;
 import jakarta.validation.Valid;
@@ -31,18 +32,18 @@ public class AiAdvisoryController {
     }
 
     @PostMapping("/suggestions")
-    public AiSuggestionResponse suggest(@Valid @RequestBody AiSuggestionRequest request) {
-        return client.suggest(request);
+    public ApiResponse<AiSuggestionResponse> suggest(@Valid @RequestBody AiSuggestionRequest request) {
+        return ApiResponse.of(client.suggest(request));
     }
 
     @PostMapping("/suggestions/queue")
-    public AiSuggestionQueueResponse queue(@Valid @RequestBody AiSuggestionRequest request, Principal principal) { return queueService.enqueue(request, principal.getName()); }
+    public ApiResponse<AiSuggestionQueueResponse> queue(@Valid @RequestBody AiSuggestionRequest request, Principal principal) { return ApiResponse.of(queueService.enqueue(request, principal.getName())); }
     @GetMapping("/suggestions/queue")
-    public List<AiSuggestionQueueResponse> queue(Principal principal) { return queueService.pending(principal.getName()); }
+    public ApiResponse<List<AiSuggestionQueueResponse>> queue(Principal principal) { return ApiResponse.of(queueService.pending(principal.getName())); }
     @GetMapping("/suggestions/accepted")
-    public List<AiSuggestionQueueResponse> accepted(@RequestParam Long procedureId, Principal principal) { return queueService.acceptedForProcedure(procedureId, principal.getName()); }
+    public ApiResponse<List<AiSuggestionQueueResponse>> accepted(@RequestParam Long procedureId, Principal principal) { return ApiResponse.of(queueService.acceptedForProcedure(procedureId, principal.getName())); }
     @PostMapping("/suggestions/{id}/accept")
-    public AiSuggestionQueueResponse accept(@PathVariable Long id, Principal principal) { return queueService.decide(id, AiSuggestionStatus.ACCEPTED, principal.getName()); }
+    public ApiResponse<AiSuggestionQueueResponse> accept(@PathVariable Long id, Principal principal) { return ApiResponse.of(queueService.decide(id, AiSuggestionStatus.ACCEPTED, principal.getName())); }
     @PostMapping("/suggestions/{id}/dismiss")
-    public AiSuggestionQueueResponse dismiss(@PathVariable Long id, Principal principal) { return queueService.decide(id, AiSuggestionStatus.DISMISSED, principal.getName()); }
+    public ApiResponse<AiSuggestionQueueResponse> dismiss(@PathVariable Long id, Principal principal) { return ApiResponse.of(queueService.decide(id, AiSuggestionStatus.DISMISSED, principal.getName())); }
 }
