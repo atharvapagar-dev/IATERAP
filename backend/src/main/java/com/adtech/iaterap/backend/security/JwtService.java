@@ -81,6 +81,20 @@ public class JwtService {
         }
     }
 
+    /** Returns whether a signed, non-expired JWT was issued for the supplied purpose. */
+    public boolean hasTokenType(String token, String expectedType) {
+        try {
+            return expectedType.equals(Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("token_type", String.class));
+        } catch (JwtException | IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
     public String extractUsername(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey)

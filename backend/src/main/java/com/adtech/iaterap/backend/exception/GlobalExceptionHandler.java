@@ -127,6 +127,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("AUTHENTICATION_FAILED");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiError);
     }
 
@@ -139,6 +140,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("ACCESS_DENIED");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
     }
 

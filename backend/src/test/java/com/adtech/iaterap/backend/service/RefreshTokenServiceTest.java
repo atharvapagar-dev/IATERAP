@@ -38,6 +38,7 @@ class RefreshTokenServiceTest {
     void setUp() {
         refreshTokenService = new RefreshTokenService(refreshTokenRepository, jwtService);
         lenient().when(jwtService.getRefreshTokenTtl()).thenReturn(java.time.Duration.ofDays(7));
+        lenient().when(jwtService.hasTokenType(any(), eq("refresh"))).thenReturn(true);
     }
 
     private User testUser() {
@@ -113,6 +114,16 @@ class RefreshTokenServiceTest {
         assertThrows(BadCredentialsException.class,
                 () -> refreshTokenService.rotate("garbage"));
 
+        verify(refreshTokenRepository, never()).findByTokenId(any());
+    }
+
+    @Test
+    void shouldRejectAnAccessTokenAtTheRefreshBoundary() {
+        when(jwtService.validateToken("access-token")).thenReturn(true);
+        when(jwtService.hasTokenType("access-token", "refresh")).thenReturn(false);
+
+        assertThrows(BadCredentialsException.class,
+                () -> refreshTokenService.rotate("access-token"));
         verify(refreshTokenRepository, never()).findByTokenId(any());
     }
 

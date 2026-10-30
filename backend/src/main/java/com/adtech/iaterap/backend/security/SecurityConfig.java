@@ -51,6 +51,26 @@ public class SecurityConfig {
                         "/v3/api-docs/**"
                 ).permitAll()
 
+                // AI context is an authenticated, read-only boundary. Keep
+                // unsupported verbs visible to Spring MVC so it can return
+                // the accurate 405 contract instead of a role-based 403.
+                .requestMatchers("/api/ai/context/**").authenticated()
+
+                // VIEWER is intentionally read-only. Individual controllers
+                // impose stricter reviewer/admin gates where the domain needs it.
+                .requestMatchers(
+                        org.springframework.http.HttpMethod.POST, "/api/**"
+                ).hasAnyRole("ADMIN", "SYSTEM_ENGINEER", "RELIABILITY_ENGINEER", "TEST_ENGINEER")
+                .requestMatchers(
+                        org.springframework.http.HttpMethod.PUT, "/api/**"
+                ).hasAnyRole("ADMIN", "SYSTEM_ENGINEER", "RELIABILITY_ENGINEER", "TEST_ENGINEER")
+                .requestMatchers(
+                        org.springframework.http.HttpMethod.PATCH, "/api/**"
+                ).hasAnyRole("ADMIN", "SYSTEM_ENGINEER", "RELIABILITY_ENGINEER", "TEST_ENGINEER")
+                .requestMatchers(
+                        org.springframework.http.HttpMethod.DELETE, "/api/**"
+                ).hasAnyRole("ADMIN", "SYSTEM_ENGINEER", "RELIABILITY_ENGINEER", "TEST_ENGINEER")
+
                 // Every other endpoint requires a valid, authenticated JWT.
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
@@ -99,6 +119,7 @@ public class SecurityConfig {
                 message,
                 LocalDateTime.now()
         );
+        apiError.setCode(status == HttpStatus.UNAUTHORIZED ? "AUTHENTICATION_REQUIRED" : "ACCESS_DENIED");
 
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

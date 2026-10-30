@@ -44,7 +44,10 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = authorizationHeader.substring(BEARER_PREFIX.length());
 
             try {
+                // Refresh JWTs are credentials exclusively for /auth/refresh;
+                // they must never authenticate an ordinary API request.
                 if (jwtService.validateToken(token)
+                        && jwtService.hasTokenType(token, "access")
                         && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                     String username = jwtService.extractUsername(token);
