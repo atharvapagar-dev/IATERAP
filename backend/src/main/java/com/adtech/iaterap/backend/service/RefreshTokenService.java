@@ -7,6 +7,7 @@ import com.adtech.iaterap.backend.repository.RefreshTokenRepository;
 import com.adtech.iaterap.backend.security.JwtService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -63,12 +64,14 @@ public class RefreshTokenService {
      * it and issues a brand-new access/refresh token pair for the same
      * user.
      */
+    @Transactional
     public LoginResponse rotate(String presentedRefreshToken) {
         if (presentedRefreshToken == null || presentedRefreshToken.isBlank()) {
             throw new BadCredentialsException(INVALID_REFRESH_TOKEN_MESSAGE);
         }
 
-        if (!jwtService.validateToken(presentedRefreshToken)) {
+        if (!jwtService.validateToken(presentedRefreshToken)
+                || !jwtService.hasTokenType(presentedRefreshToken, "refresh")) {
             throw new BadCredentialsException(INVALID_REFRESH_TOKEN_MESSAGE);
         }
 
@@ -76,7 +79,7 @@ public class RefreshTokenService {
         RefreshToken session = refreshTokenRepository.findByTokenId(tokenId)
                 .orElseThrow(() -> new BadCredentialsException(INVALID_REFRESH_TOKEN_MESSAGE));
 
-        if (session.isRevoked()) {
+        if (session.isRevoked() || !session.getExpiresAt().isAfter(LocalDateTime.now())) {
             throw new BadCredentialsException(INVALID_REFRESH_TOKEN_MESSAGE);
         }
 

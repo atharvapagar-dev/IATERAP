@@ -3,11 +3,13 @@ package com.adtech.iaterap.backend.controller;
 import com.adtech.iaterap.backend.entity.AuditLog;
 import com.adtech.iaterap.backend.service.AuditService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/audit-logs")
+@PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ENGINEER', 'RELIABILITY_ENGINEER')")
 public class AuditLogController {
 
     private final AuditService service;

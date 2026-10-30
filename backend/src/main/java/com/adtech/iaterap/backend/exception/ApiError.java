@@ -8,6 +8,7 @@ public class ApiError {
     private int status;
     private String error;
     private String message;
+    /** Stable machine-readable error code; message remains human-readable. */
     private String code;
     private LocalDateTime timestamp;
     private Map<String, String> fieldErrors;
@@ -53,12 +54,16 @@ public class ApiError {
         return message;
     }
 
-    public String getCode() { return code; }
-
-    public void setCode(String code) { this.code = code; }
-
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public LocalDateTime getTimestamp() {
