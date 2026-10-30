@@ -32,6 +32,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("RESOURCE_NOT_FOUND");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
@@ -56,6 +57,7 @@ public class GlobalExceptionHandler {
                 fieldErrors
         );
 
+        apiError.setCode("VALIDATION_FAILED");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
@@ -70,6 +72,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("INVALID_PARAMETER");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
@@ -84,6 +87,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("MISSING_PARAMETER");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
@@ -96,6 +100,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("MALFORMED_REQUEST");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
@@ -162,6 +167,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("INVALID_APPROVAL_TRANSITION");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
 
@@ -176,6 +182,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        apiError.setCode("COVERAGE_THRESHOLD_NOT_MET");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
 

@@ -7,6 +7,7 @@ import com.adtech.iaterap.backend.coverage.rule.RuleEngine;
 import com.adtech.iaterap.backend.coverage.rule.RuleResult;
 import com.adtech.iaterap.backend.dto.CoverageGapResponse;
 import com.adtech.iaterap.backend.dto.CoverageResponse;
+import com.adtech.iaterap.backend.dto.ApiResponse;
 import com.adtech.iaterap.backend.entity.TestProcedure;
 import com.adtech.iaterap.backend.repository.TestProcedureRepository;
 import com.adtech.iaterap.backend.repository.TestStepRepository;
@@ -59,7 +60,7 @@ public class CoverageController {
     }
 
     @GetMapping("/{procedureId}/coverage")
-    public CoverageResponse getCoverage(@PathVariable Long procedureId) {
+    public ApiResponse<CoverageResponse> getCoverage(@PathVariable Long procedureId) {
         TestProcedure procedure = procedureRepository.findById(procedureId)
                 .orElseThrow(() -> new NoSuchElementException("Test procedure not found: " + procedureId));
 
@@ -84,14 +85,14 @@ public class CoverageController {
             }
         });
 
-        return new CoverageResponse(
+        return ApiResponse.of(new CoverageResponse(
                 procedure.getId(),
                 procedure.getVersionNumber(),
                 score.getCategoryScores(),
                 weights,
                 score.getCompositeScore(),
                 score.getThresholdResults(),
-                score.getUnavailableReasons(), gaps);
+                score.getUnavailableReasons(), gaps));
     }
 
     private String describe(String type, Long id) {
