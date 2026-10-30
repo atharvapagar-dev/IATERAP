@@ -65,10 +65,11 @@ class AiContextControllerTest {
 
         mvc.perform(get("/api/ai/context/test-procedure/42"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contract_version").value("1.0"))
-                .andExpect(jsonPath("$.test_procedure_id").value(42))
-                .andExpect(jsonPath("$.step_count").value(0))
-                .andExpect(jsonPath("$.coverage_context.coverage_gaps").isArray());
+                .andExpect(jsonPath("$.data.contract_version").value("1.0"))
+                .andExpect(jsonPath("$.data.test_procedure_id").value(42))
+                .andExpect(jsonPath("$.data.step_count").value(0))
+                .andExpect(jsonPath("$.data.coverage_context.coverage_gaps").isArray())
+                .andExpect(jsonPath("$.meta").isMap());
     }
 
     @Test

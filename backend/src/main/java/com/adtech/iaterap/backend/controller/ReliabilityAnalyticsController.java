@@ -5,6 +5,7 @@ import com.adtech.iaterap.backend.dto.ReliabilityMetricsResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityMetricSeriesResponse;
 import com.adtech.iaterap.backend.dto.ReliabilityReportResponse;
 import com.adtech.iaterap.backend.dto.ParetoHfraResponse;
+import com.adtech.iaterap.backend.dto.ApiResponse;
 import com.adtech.iaterap.backend.service.ReliabilityAnalyticsService;
 import com.adtech.iaterap.backend.service.ReliabilityMetricsService;
 import com.adtech.iaterap.backend.service.ReliabilityReportingService;
@@ -33,22 +34,22 @@ public class ReliabilityAnalyticsController {
     }
 
     @GetMapping("/dashboard")
-    public ReliabilityDashboardResponse dashboard() {
-        return service.dashboard();
+    public ApiResponse<ReliabilityDashboardResponse> dashboard() {
+        return ApiResponse.of(service.dashboard());
     }
 
     @GetMapping("/metrics")
-    public ReliabilityMetricsResponse metrics() { return metricsService.metrics(); }
+    public ApiResponse<ReliabilityMetricsResponse> metrics() { return ApiResponse.of(metricsService.metrics()); }
     @GetMapping("/mtbf")
-    public ReliabilityMetricSeriesResponse mtbf() { return series("MTBF_HOURS", ReliabilityMetricsResponse.MetricSummary::mtbfHours); }
+    public ApiResponse<ReliabilityMetricSeriesResponse> mtbf() { return ApiResponse.of(series("MTBF_HOURS", ReliabilityMetricsResponse.MetricSummary::mtbfHours)); }
     @GetMapping("/mttr")
-    public ReliabilityMetricSeriesResponse mttr() { return series("MTTR_HOURS", ReliabilityMetricsResponse.MetricSummary::mttrHours); }
+    public ApiResponse<ReliabilityMetricSeriesResponse> mttr() { return ApiResponse.of(series("MTTR_HOURS", ReliabilityMetricsResponse.MetricSummary::mttrHours)); }
     @GetMapping("/failure-rate")
-    public ReliabilityMetricSeriesResponse failureRate() { return series("FAILURE_RATE_PER_HOUR", ReliabilityMetricsResponse.MetricSummary::failureRatePerHour); }
+    public ApiResponse<ReliabilityMetricSeriesResponse> failureRate() { return ApiResponse.of(series("FAILURE_RATE_PER_HOUR", ReliabilityMetricsResponse.MetricSummary::failureRatePerHour)); }
     @GetMapping("/reports/current")
-    public List<ReliabilityReportResponse> currentReports() { return reportingService.currentPeriod(); }
+    public ApiResponse<List<ReliabilityReportResponse>> currentReports() { return ApiResponse.of(reportingService.currentPeriod()); }
     @GetMapping("/pareto-hfra")
-    public ParetoHfraResponse paretoHfra() { return paretoHfraService.analyse(); }
+    public ApiResponse<ParetoHfraResponse> paretoHfra() { return ApiResponse.of(paretoHfraService.analyse()); }
 
     private ReliabilityMetricSeriesResponse series(String metric, java.util.function.Function<ReliabilityMetricsResponse.MetricSummary, Double> extractor) {
         ReliabilityMetricsResponse metrics = metricsService.metrics();
