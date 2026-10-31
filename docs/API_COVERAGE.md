@@ -1,129 +1,54 @@
-# IATERAP API Documentation: Procedure Coverage
+# Procedure and Coverage API
 
-| Document Information | Details |
-|---|---|
-| Jira | AI-214 [T10-DOC] API documentation: `/procedures/{id}/coverage` |
-| Document Type | API Documentation (Draft) |
-| Status | Draft - endpoint contract documented; controller implementation pending |
-| API Version | v1 |
-| Last Updated | 10 September 2026 |
+| Status | Finalized for the current backend contract |
+| --- | --- |
+| Base path | `/api/procedures` |
+| Authentication | Required |
+| Response convention | `{ "data": ..., "meta": {...}, "timestamp": "..." }` |
 
----
+## Procedure collection
 
-## 1. Purpose
-
-This document defines the REST contract for calculating the six-category coverage score for one test procedure. The endpoint is read-only: it evaluates the procedure's current test steps using the configured coverage rules and returns the category percentages together with the weighted composite score.
-
-The contract is documented ahead of controller implementation so the backend and Procedure Builder frontend can integrate against the same response shape.
-
-## 2. Endpoint
-
-```http
-GET /api/procedures/{id}/coverage
-```
-
-| Component | Description |
-|---|---|
-| `{id}` | Numeric test-procedure identifier |
-| Request body | None |
-| Authentication | Authenticated user; same security policy as other `/api/procedures` endpoints |
-| Side effects | None; the evaluation does not modify the procedure, steps, or revision history |
-
-## 3. Successful response
-
-**Status:** `200 OK`
+`GET /api/procedures?cursor={lastId}&limit={1..100}` returns procedures after the numeric cursor in ascending procedure-id order. `limit` defaults to 50. `GET /api/procedures/by-lru/{lruId}` and `GET /api/procedures/review-queue` support the same pagination contract.
 
 ```json
 {
-  "procedureId": 42,
-  "versionNumber": 3,
-  "categories": {
-    "INTERFACE": 80.0,
-    "SIGNAL": 60.0,
-    "REQUIREMENT": 40.0,
-    "FUNCTIONAL": 20.0,
-    "FAULT": 0.0,
-    "FMEA": 100.0
-  },
-  "weights": {
-    "INTERFACE": 0.15,
-    "SIGNAL": 0.10,
-    "REQUIREMENT": 0.20,
-    "FUNCTIONAL": 0.10,
-    "FAULT": 0.25,
-    "FMEA": 0.20
-  },
-  "compositeScore": 53.0,
-  "evaluatedAt": "2026-09-10T12:30:00Z"
+  "data": [{ "id": 42, "name": "FCU validation", "versionNumber": 3, "approvalStatus": "DRAFT" }],
+  "meta": { "count": 1, "nextCursor": "42" },
+  "timestamp": "2026-10-30T12:00:00"
 }
 ```
 
-`compositeScore` is calculated as:
+The procedure API also provides read/create/update, review submission, approval/rejection, revision history, rollback, immutable snapshots, and frozen coverage reports. All successful responses use the same envelope; reviewer actions require `ADMIN`, `SYSTEM_ENGINEER`, or `RELIABILITY_ENGINEER`.
 
-```text
-(FAULT × 0.25) + (FMEA × 0.20) + (REQUIREMENT × 0.20)
-+ (INTERFACE × 0.15) + (SIGNAL × 0.10) + (FUNCTIONAL × 0.10)
-```
+## Current coverage
 
-All category percentages and the composite score are returned on a `0.00`–`100.00` scale and rounded to two decimal places. The six weights sum to `1.00`.
-
-## 4. Category semantics
-
-| Category | Meaning |
-|---|---|
-| `INTERFACE` | Test steps referencing an interface element |
-| `SIGNAL` | Test steps referencing a signal element |
-| `REQUIREMENT` | Test steps representing a requirement |
-| `FUNCTIONAL` | Test steps representing a functional element |
-| `FAULT` | Test steps referencing a fault element |
-| `FMEA` | Test steps containing FMEA evidence |
-
-For each category, the percentage is:
-
-```text
-(referenced elements ÷ total procedure test steps) × 100
-```
-
-When a procedure has no test steps, each category evaluates to `0.0`; the response remains valid and the composite score is `0.0`.
-
-## 5. Error responses
-
-### `400 Bad Request`
-
-The `{id}` path value is not numeric.
-
-### `401 Unauthorized`
-
-No valid authentication credentials were supplied.
-
-### `404 Not Found`
-
-No test procedure exists with the requested identifier.
+`GET /api/procedures/{procedureId}/coverage` evaluates the current persisted procedure and its ordered steps without creating a revision or audit record.
 
 ```json
 {
-  "status": 404,
-  "error": "Not Found",
-  "message": "Test procedure not found: 42",
-  "timestamp": "2026-09-10T12:30:00"
+  "data": {
+    "procedureId": 42,
+    "versionNumber": 3,
+    "categories": { "COVERAGE-INTERFACE": 80.0, "COVERAGE-FAULT": 100.0 },
+    "weights": { "COVERAGE-INTERFACE": 0.15, "COVERAGE-FAULT": 0.25 },
+    "compositeScore": 85.0,
+    "thresholdResults": { "COVERAGE-INTERFACE": true, "COVERAGE-FAULT": true },
+    "unavailableReasons": {},
+    "gaps": []
+  },
+  "meta": {},
+  "timestamp": "2026-10-30T12:00:00"
 }
 ```
 
-### `500 Internal Server Error`
+Scores are percentages (`0.00`–`100.00`). The composite applies the enabled persisted coverage-rule weights. If any enabled category cannot produce a percentage, its score and threshold result are `null`, a reason is returned in `unavailableReasons`, and the composite is `null`; the API never reports a misleading partial composite.
 
-The configured rule set is incomplete or a configured rule has no registered implementation. The service must not return a partial score in this case.
+## Rule configuration
 
-## 6. Consistency and revision behaviour
+`GET /api/admin/rules?cursor={lastRuleId}&limit={1..100}` is administrator-only and uses lexical rule-id cursors. `PATCH /api/admin/rules/{ruleId}/enabled` and `PATCH /api/admin/rules/{ruleId}/priority` return the updated configuration in the standard envelope. Coverage scoring configuration is managed under `/api/admin/coverage/scoring-config` and is also administrator-only.
 
-- The evaluation uses the procedure's current persisted test steps and current enabled rule configuration.
-- The endpoint does not create a procedure revision or audit entry.
-- Calling the endpoint repeatedly with unchanged procedure data produces the same score.
-- A later revision may produce a different score; clients should retain `versionNumber` with the result when displaying or exporting it.
+## Errors
 
-## 7. Implementation status
+All errors retain HTTP status, `error`, human-readable `message`, `timestamp`, and a stable `code`. Important codes are `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED`, `INVALID_PARAMETER`, `MISSING_PARAMETER`, `MALFORMED_REQUEST`, `METHOD_NOT_ALLOWED`, `ACCESS_DENIED`, `INVALID_APPROVAL_TRANSITION`, and `COVERAGE_THRESHOLD_NOT_MET`.
 
-`CoverageEngine` and the six category rules are implemented and unit-tested. The controller/service endpoint described here is the next integration step; until that work is merged, this document is a draft contract and `/api/procedures/{id}/coverage` must not be presented as an available production route.
-
-## 8. Jira reference
-
-- AI-214 / T10-DOC
+`COVERAGE_THRESHOLD_NOT_MET` is a `409 Conflict` returned by approval when the frozen submission-time coverage report has a failed required threshold. Clients should branch on `code`, not parse the message.

@@ -63,6 +63,34 @@ class CoverageEngineTest {
         assertEquals(45.0, configuredEngine().calculate(results(0, 0, 100, 100, 50, 50)).getCompositeScore());
     }
 
+    @Test
+    void roundsFractionalCategoryScoresBeforeApplyingThresholdAndComposite() {
+        RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
+        List<RuleConfiguration> rules = configs("100", "0", "0", "0", "0", "0");
+        rules.getFirst().setThreshold(new BigDecimal("33.34"));
+        when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE))
+                .thenReturn(rules);
+        Map<String, RuleResult> results = results(0, 0, 0, 0, 0, 0);
+        results.put("COVERAGE-FAULT", RuleResult.pass("fractional", Map.of("percentage", 33.335)));
+
+        CoverageScore score = engine(repository).calculate(results);
+
+        assertEquals(33.34, score.getCategoryScores().get("COVERAGE-FAULT"));
+        assertEquals(33.34, score.getCompositeScore());
+        assertTrue(score.getThresholdResults().get("COVERAGE-FAULT"));
+    }
+
+    @Test
+    void failsClosedWhenAnEnabledCoverageResultIsMissing() {
+        Map<String, RuleResult> incomplete = results(100, 100, 100, 100, 100, 100);
+        incomplete.remove("COVERAGE-FMEA");
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> configuredEngine().calculate(incomplete));
+
+        assertTrue(exception.getMessage().contains("COVERAGE-FMEA"));
+    }
+
     private CoverageEngine configuredEngine() {
         RuleConfigurationRepository repository = mock(RuleConfigurationRepository.class);
         when(repository.findByCategoryAndEnabledTrueOrderByPriorityAscRuleIdAsc(RuleCategory.COVERAGE))
