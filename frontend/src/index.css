@@ -9,6 +9,9 @@
     --primary: #72b5d2;
     --primary-dark: #a3d0e2;
     --danger: #d88989;
+    --success: #9fc2ad;
+    --warning: #f0c674;
+    --focus-ring: rgba(114, 181, 210, 0.35);
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
     --radius: 6px;
 }
@@ -40,6 +43,11 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
 }
 
 button,
@@ -120,7 +128,7 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(114, 181, 210, 0.2);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 textarea {
@@ -537,6 +545,27 @@ textarea {
     font-size: 0.82rem;
     font-weight: 700;
     padding: 0.32rem 0.7rem;
+}
+
+/* AI-279: shared polish primitives for data-dense engineering screens. */
+.section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.section-heading h3 { margin: 0; }
+.page-alert { margin: 0; padding: 12px 14px; border-left: 3px solid var(--danger); background: rgba(216, 137, 137, .1); color: #f3c0c0; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.table-wrap .entity-table { border: 0; }
+.management-shell__nav a.active { background: #1d2b36; border-color: var(--primary); color: var(--primary-dark); }
+.status-pill--review { background: rgba(240, 198, 116, .15); color: var(--warning); }
+.status-pill--approved { background: rgba(120, 173, 140, .15); color: var(--success); }
+.status-pill--rejected { background: rgba(216, 137, 137, .15); color: var(--danger); }
+.step-readonly { border-left: 3px solid var(--primary); }
+.step-readonly__title { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+
+@media (max-width: 720px) {
+    .management-shell { width: min(100% - 20px, 1180px); padding-top: 12px; }
+    .management-shell__header, .page-card, .form-card { padding: 18px; }
+    .management-shell__nav { gap: 7px; }
+    .management-shell__nav a { font-size: .82rem; padding: .45rem .65rem; }
+    .coverage-summary__header, .coverage-summary__metric-title, .coverage-gap { align-items: flex-start; flex-direction: column; }
 }
 
 /* AI-182/AI-183: Version Comparison (T7-B1 engine / T7-B2 Diff Row) */
