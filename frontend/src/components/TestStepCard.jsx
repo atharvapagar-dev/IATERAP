@@ -126,8 +126,8 @@ export default function TestStepCard({
 
     if (readOnly) {
         return (
-            <div className="page-card">
-                <p><strong>Step {step.executionOrder}</strong> - {step.approvalStatus}</p>
+            <div className="page-card step-readonly">
+                <p className="step-readonly__title"><strong>Step {step.executionOrder}</strong><span className="status-pill">{step.approvalStatus}</span></p>
                 <p>{step.expectedBehaviour}</p>
                 <p className="helper-text">Acceptance: {step.acceptanceCriteria}</p>
                 <p className="helper-text">Pass/Fail: {step.passFailCriteria}</p>
