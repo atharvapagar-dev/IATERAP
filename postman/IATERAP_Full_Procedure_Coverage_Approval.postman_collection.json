@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "IATERAP Full Procedure → Coverage → Approval Regression",
+    "description": "AI-278 / T18-A1. Run in order against a clean synthetic-data database. The collection resolves seeded references, creates a complete procedure, verifies live and frozen coverage, submits it for review, and approves it as an authorised reviewer.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin123" },
+    { "key": "accessToken", "value": "" },
+    { "key": "lruId", "value": "" },
+    { "key": "interfaceOneId", "value": "" },
+    { "key": "interfaceTwoId", "value": "" },
+    { "key": "connectorId", "value": "" },
+    { "key": "signalOneId", "value": "" },
+    { "key": "signalTwoId", "value": "" },
+    { "key": "protocolTagId", "value": "" },
+    { "key": "faultCategoryId", "value": "" },
+    { "key": "procedureId", "value": "" },
+    { "key": "submittedVersion", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Authenticate as reviewer",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}" },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+        "pm.collectionVariables.set('accessToken', body.accessToken);"
+      ] } }]
+    },
+    {
+      "name": "2. Resolve clean seeded references",
+      "item": [
+        {
+          "name": "Get first seeded LRU",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/lrus" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Seeded LRUs are available', () => pm.response.to.have.status(200));",
+            "const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('lruId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get two interfaces",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/interfaces/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.have.lengthOf.at.least(2);",
+            "pm.collectionVariables.set('interfaceOneId', rows[0].id); pm.collectionVariables.set('interfaceTwoId', rows[1].id);"
+          ] } }]
+        },
+        {
+          "name": "Get connector",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/connectors/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('connectorId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get two signal-library entries",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/signal-libraries/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.have.lengthOf.at.least(2);",
+            "pm.collectionVariables.set('signalOneId', rows[0].id); pm.collectionVariables.set('signalTwoId', rows[1].id);"
+          ] } }]
+        },
+        {
+          "name": "Get protocol tag",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/protocol-tags/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('protocolTagId', rows[0].id);"
+          ] } }]
+        },
+        {
+          "name": "Get fault template",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/fault-templates/by-lru/{{lruId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.response.to.have.status(200); const rows = pm.response.json(); pm.expect(rows).to.be.an('array').and.not.empty; pm.collectionVariables.set('faultCategoryId', rows[0].id);"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "3. Create fully covered draft procedure",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "body": { "mode": "raw", "raw": "{\n  \"lruId\": {{lruId}},\n  \"name\": \"AI-278 Procedure Coverage Approval {{$timestamp}}\",\n  \"description\": \"Clean seeded full-flow regression procedure\",\n  \"steps\": [\n    {\n      \"interfaceId\": {{interfaceOneId}},\n      \"connectorId\": {{connectorId}},\n      \"signalLibraryId\": {{signalOneId}},\n      \"protocolTagId\": {{protocolTagId}},\n      \"faultCategoryId\": {{faultCategoryId}},\n      \"expectedBehaviour\": \"First synthetic signal remains nominal\",\n      \"acceptanceCriteria\": \"First signal is within its expected range\",\n      \"executionOrder\": 1,\n      \"passFailCriteria\": \"Pass when first signal is nominal\"\n    },\n    {\n      \"interfaceId\": {{interfaceTwoId}},\n      \"connectorId\": {{connectorId}},\n      \"signalLibraryId\": {{signalTwoId}},\n      \"protocolTagId\": {{protocolTagId}},\n      \"faultCategoryId\": {{faultCategoryId}},\n      \"expectedBehaviour\": \"Second synthetic signal remains nominal\",\n      \"acceptanceCriteria\": \"Second signal is within its expected range\",\n      \"executionOrder\": 2,\n      \"passFailCriteria\": \"Pass when second signal is nominal\"\n    }\n  ]\n}" },
+        "url": "{{baseUrl}}/procedures"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Procedure is created', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json(); pm.expect(body.data.approvalStatus).to.eql('DRAFT'); pm.expect(body.data.steps).to.have.lengthOf(2);",
+        "pm.collectionVariables.set('procedureId', body.data.id);"
+      ] } }]
+    },
+    {
+      "name": "4. Verify live coverage before submission",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/coverage" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Coverage response succeeds', () => pm.response.to.have.status(200));",
+        "const coverage = pm.response.json().data; pm.expect(coverage.procedureId).to.eql(Number(pm.collectionVariables.get('procedureId')));",
+        "pm.expect(coverage.compositeScore).to.be.a('number'); pm.expect(coverage.thresholdResults).to.be.an('object');",
+        "pm.expect(Object.values(coverage.thresholdResults).filter(result => result === false)).to.have.lengthOf(0);"
+      ] } }]
+    },
+    {
+      "name": "5. Submit for review and freeze coverage",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/submit-for-review" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Submission succeeds', () => pm.response.to.have.status(200));",
+        "const procedure = pm.response.json().data; pm.expect(procedure.approvalStatus).to.eql('IN_REVIEW');",
+        "pm.collectionVariables.set('submittedVersion', procedure.versionNumber);"
+      ] } }]
+    },
+    {
+      "name": "6. Verify frozen coverage report",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/coverage-reports/{{submittedVersion}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Frozen report is available', () => pm.response.to.have.status(200));",
+        "const report = pm.response.json().data; pm.expect(report.testProcedureId).to.eql(Number(pm.collectionVariables.get('procedureId')));",
+        "pm.expect(report.procedureVersionNumber).to.eql(Number(pm.collectionVariables.get('submittedVersion'))); pm.expect(report.reportPayload).to.be.a('string').and.not.empty;"
+      ] } }]
+    },
+    {
+      "name": "7. Approve reviewed procedure",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/approve" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Approval succeeds', () => pm.response.to.have.status(200));",
+        "const procedure = pm.response.json().data; pm.expect(procedure.approvalStatus).to.eql('APPROVED');"
+      ] } }]
+    },
+    {
+      "name": "8. Confirm approved state",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Approved procedure is readable', () => pm.response.to.have.status(200));",
+        "const procedure = pm.response.json().data; pm.expect(procedure.approvalStatus).to.eql('APPROVED'); pm.expect(procedure.steps).to.have.lengthOf(2);"
+      ] } }]
+    },
+    {
+      "name": "9. Repeat approval is rejected",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/procedures/{{procedureId}}/approve" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Invalid approval transition returns conflict', () => pm.response.to.have.status(409));",
+        "pm.expect(pm.response.json().code).to.eql('INVALID_APPROVAL_TRANSITION');"
+      ] } }]
+    }
+  ]
+}
