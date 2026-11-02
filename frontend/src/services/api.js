@@ -1,9 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  // Keep the API host aligned with the local development server URL. Using
-  // the loopback address avoids localhost resolving to IPv6 on some machines.
-  baseURL: "http://127.0.0.1:8080/api",
+  // Docker builds use the nginx-routed same-origin /api endpoint. Local
+  // development retains the existing loopback default unless Vite supplies
+  // VITE_API_BASE_URL.
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
