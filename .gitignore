@@ -22,3 +22,12 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Local runtime configuration and secrets. Commit only the corresponding
+# *.example templates with non-sensitive placeholders.
+.env
+.env.*
+!.env.example
+docker/.env
+backend/.env
+ai-service/.env
