@@ -22,7 +22,7 @@ public class JwtService {
     private final Duration refreshTokenTtl;
 
     public JwtService(
-            @Value("${jwt.secret:iaterap-dev-jwt-signing-key-2026-32-bytes-min}") String secret,
+            @Value("${jwt.secret}") String secret,
             @Value("${jwt.access-token-ttl-minutes:60}") long accessTokenTtlMinutes,
             @Value("${jwt.refresh-token-ttl-days:7}") long refreshTokenTtlDays
     ) {

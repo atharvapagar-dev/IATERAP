@@ -55,4 +55,7 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/iaterap
           SPRING_DATASOURCE_USERNAME: iaterap
           SPRING_DATASOURCE_PASSWORD: iaterap123
+          # Test-only signing material. Production has no fallback: its
+          # deployment must inject JWT_SECRET through its secret store.
+          JWT_SECRET: ci-only-signing-secret-that-is-at-least-32-bytes-long
         run: ./mvnw clean test
