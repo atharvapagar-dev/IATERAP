@@ -28,19 +28,21 @@ docker compose ps
 
 Open `http://localhost` (or `http://localhost:${APP_PORT}` when `APP_PORT` is set). Follow startup logs with `docker compose logs -f backend ai-service nginx`.
 
-For a non-default local setup, create `docker/.env` (not committed):
+Before starting Compose, copy `docker/.env.example` to `docker/.env` (not committed) and replace all placeholders. Runtime database credentials and JWT signing keys are required; Compose intentionally fails fast if they are absent. See [Environment Configuration](ENVIRONMENT_CONFIGURATION.md).
 
 ```dotenv
-APP_PORT=8088
+POSTGRES_DB=iaterap
+POSTGRES_USER=iaterap_app
+POSTGRES_PASSWORD=replace-with-a-unique-local-password
 POSTGRES_PORT=5433
-POSTGRES_PASSWORD=replace-for-non-demo-use
-JWT_SECRET=replace-with-a-long-random-secret
+APP_PORT=8088
+JWT_SECRET=replace-with-a-long-random-secret-at-least-32-bytes
 ```
 
 ## Verification and shutdown
 
 ```bash
-docker compose config
+docker compose --env-file .env config
 docker compose exec postgres pg_isready -U iaterap -d iaterap
 curl http://localhost/api/health
 docker compose down
