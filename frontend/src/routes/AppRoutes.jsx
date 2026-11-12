@@ -47,6 +47,7 @@ import CoverageDashboardPage from "../pages/CoverageDashboardPage";
 import ValidationReportsPage from "../pages/ValidationReportsPage";
 import ReliabilityDashboardPage from "../pages/ReliabilityDashboardPage";
 import AiSuggestionQueuePage from "../pages/AiSuggestionQueuePage";
+import EngineeringWorkspacePage from "../pages/EngineeringWorkspacePage";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import { AuthContext } from "../contexts/authContext";
@@ -56,7 +57,7 @@ function HomeRoute() {
 
     return (
         <Navigate
-            to={token ? "/projects" : "/login"}
+            to={token ? "/workspace" : "/login"}
             replace
         />
     );
@@ -85,6 +86,15 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ProjectListPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/workspace"
+                element={
+                    <ProtectedRoute>
+                        <EngineeringWorkspacePage />
                     </ProtectedRoute>
                 }
             />

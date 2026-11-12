@@ -35,6 +35,9 @@ export default function ManagementLayout({
                 </p>
 
                 <nav className="management-shell__nav">
+                    <Link to="/workspace" style={linkStyle}>
+                        Workspace
+                    </Link>
                     <Link to="/projects" style={linkStyle}>
                         Projects
                     </Link>

@@ -23,6 +23,34 @@ function nextTempKey() {
     return `new-${tempKeyCounter}`;
 }
 
+function createDraftSnapshot({ lruId = "", name = "", description = "", steps = [] } = {}) {
+    return JSON.stringify({
+        lruId: String(lruId),
+        name,
+        description,
+        steps: steps.map((step) => ({
+            id: step.id || null,
+            interfaceId: step.interfaceId || null,
+            connectorId: step.connectorId || null,
+            signalLibraryId: step.signalLibraryId || null,
+            protocolTagId: step.protocolTagId || null,
+            faultCategoryId: step.faultCategoryId || null,
+            expectedBehaviour: step.expectedBehaviour || "",
+            expectedRange: step.expectedRange || "",
+            calibrationRequirement: step.calibrationRequirement || "",
+            safetyNotes: step.safetyNotes || "",
+            acceptanceCriteria: step.acceptanceCriteria || "",
+            preconditions: step.preconditions || "",
+            dependencies: step.dependencies || "",
+            executionOrder: step.executionOrder || null,
+            postConditions: step.postConditions || "",
+            passFailCriteria: step.passFailCriteria || "",
+            expectedObservation: step.expectedObservation || "",
+            engineerRemarks: step.engineerRemarks || "",
+        })),
+    });
+}
+
 export default function ProcedureBuilderPage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -42,6 +70,7 @@ export default function ProcedureBuilderPage() {
     const [submittingForReview, setSubmittingForReview] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+    const [savedDraft, setSavedDraft] = useState(() => createDraftSnapshot());
 
     // AI-182/AI-183: Version Comparison
     const [showCompare, setShowCompare] = useState(false);
@@ -77,10 +106,19 @@ export default function ProcedureBuilderPage() {
                 const procRes = await testProcedureService.getProcedureById(id);
                 const procedure = procRes.data;
 
-                setLruId(procedure.lruId ? String(procedure.lruId) : "");
+                const loadedLruId = procedure.lruId ? String(procedure.lruId) : "";
+                const loadedSteps = (procedure.steps || []).map((s) => ({ ...s }));
+
+                setLruId(loadedLruId);
                 setName(procedure.name || "");
                 setDescription(procedure.description || "");
-                setSteps((procedure.steps || []).map((s) => ({ ...s })));
+                setSteps(loadedSteps);
+                setSavedDraft(createDraftSnapshot({
+                    lruId: loadedLruId,
+                    name: procedure.name || "",
+                    description: procedure.description || "",
+                    steps: loadedSteps,
+                }));
 
                 setMeta({
                     approvalStatus: procedure.approvalStatus,
@@ -88,6 +126,8 @@ export default function ProcedureBuilderPage() {
                 });
                 const suggestionsRes = await api.get("/ai/suggestions/accepted", { params: { procedureId: id } });
                 setAcceptedSuggestions(suggestionsRes.data.data);
+            } else {
+                setSavedDraft(createDraftSnapshot());
             }
         } catch (fetchError) {
             console.error("Failed to load Procedure Builder data:", fetchError);
@@ -104,6 +144,22 @@ export default function ProcedureBuilderPage() {
 
         void loadInitialData();
     }, [loadAll]);
+
+    const currentDraft = createDraftSnapshot({ lruId, name, description, steps });
+    const hasUnsavedChanges = currentDraft !== savedDraft;
+
+    useEffect(() => {
+        const warnBeforeLeaving = (event) => {
+            if (!hasUnsavedChanges) {
+                return;
+            }
+            event.preventDefault();
+            event.returnValue = "";
+        };
+
+        window.addEventListener("beforeunload", warnBeforeLeaving);
+        return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+    }, [hasUnsavedChanges]);
 
     const handleAddStep = (payload) => {
         setSteps((current) => [
@@ -225,9 +281,14 @@ export default function ProcedureBuilderPage() {
                     versionNumber: response.data.versionNumber,
                 });
 
-                setSteps(
-                    (response.data.steps || []).map((s) => ({ ...s }))
-                );
+                const savedSteps = (response.data.steps || []).map((s) => ({ ...s }));
+                setSteps(savedSteps);
+                setSavedDraft(createDraftSnapshot({
+                    lruId,
+                    name: payload.name,
+                    description: payload.description,
+                    steps: savedSteps,
+                }));
 
                 setSuccessMessage(
                     `Saved - now at version ${response.data.versionNumber}.`
@@ -254,6 +315,23 @@ export default function ProcedureBuilderPage() {
             setError(message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDiscardChanges = async () => {
+        if (!hasUnsavedChanges || window.confirm("Discard unsaved procedure changes? This cannot be undone.")) {
+            setError("");
+            setSuccessMessage("");
+            if (isEditing) {
+                setLoading(true);
+                await loadAll();
+                return;
+            }
+            setLruId("");
+            setName("");
+            setDescription("");
+            setSteps([]);
+            setSavedDraft(createDraftSnapshot());
         }
     };
 
@@ -366,7 +444,14 @@ export default function ProcedureBuilderPage() {
                 approvalStatus: response.data.approvalStatus,
                 versionNumber: response.data.versionNumber,
             });
-            setSteps((response.data.steps || []).map((s) => ({ ...s })));
+            const submittedSteps = (response.data.steps || []).map((s) => ({ ...s }));
+            setSteps(submittedSteps);
+            setSavedDraft(createDraftSnapshot({
+                lruId,
+                name,
+                description,
+                steps: submittedSteps,
+            }));
             setSuccessMessage(`Submitted for review - now at version ${response.data.versionNumber}.`);
         } catch (submitError) {
             console.error("Failed to submit Test Procedure for review:", submitError);
@@ -427,6 +512,14 @@ export default function ProcedureBuilderPage() {
                     : "A Test Procedure belongs to a single LRU; its Test Steps can only reference that LRU's own Interfaces, Connectors, Signals, Protocol Tags and Fault Templates. At least one Test Step is required."
             }
         >
+            <section className="procedure-builder__status" aria-label="Procedure draft status">
+                <div>
+                    <p className="eyebrow">Authoring status</p>
+                    <strong>{hasUnsavedChanges ? "Unsaved changes" : "All changes saved"}</strong>
+                    <p className="helper-text">{hasUnsavedChanges ? "Save before submitting for review or leaving this page." : "Your current procedure revision is safely stored."}</p>
+                </div>
+                {isEditing && meta ? <span className={`status-pill status-pill--${String(meta.approvalStatus || "draft").toLowerCase().replaceAll("_", "-")}`}>{meta.approvalStatus} · v{meta.versionNumber}</span> : <span className="status-pill">DRAFT</span>}
+            </section>
             {isEditing && acceptedSuggestions.length ? (
                 <section className="form-card">
                     <h2>Accepted AI suggestions</h2>
@@ -453,6 +546,7 @@ export default function ProcedureBuilderPage() {
             ) : null}
 
             <section className="form-card">
+                <p className="helper-text procedure-builder__required-note">Fields marked <strong>*</strong> are required. Save each Test Step after completing its required evidence fields, then save the procedure revision.</p>
                 <div className="form-grid form-grid--two">
                     <div className="form-field">
                         <label>LRU *</label>
@@ -761,8 +855,11 @@ export default function ProcedureBuilderPage() {
             </section>
 
             <div className="form-actions" style={{ marginTop: "16px" }}>
-                <button onClick={handleSaveProcedure} disabled={saving || submittingForReview}>
-                    {saving ? "Saving..." : "Save Procedure"}
+                <button onClick={handleSaveProcedure} disabled={saving || submittingForReview || !hasUnsavedChanges}>
+                    {saving ? "Saving..." : hasUnsavedChanges ? "Save Procedure" : "Saved"}
+                </button>
+                <button type="button" className="button--secondary" onClick={() => void handleDiscardChanges()} disabled={saving || submittingForReview || !hasUnsavedChanges}>
+                    Discard changes
                 </button>
                 {isEditing && meta?.approvalStatus === "DRAFT" ? (
                     <button onClick={handleSubmitForReview} disabled={saving || submittingForReview}>
