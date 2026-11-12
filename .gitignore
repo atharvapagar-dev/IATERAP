@@ -35,3 +35,6 @@ ai-service/.env
 # Locally generated database backup/restore verification artifacts.
 backup/
 *.dump
+
+# Local deployment regression evidence.
+artifacts/deployment-regression/
