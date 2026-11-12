@@ -8,6 +8,8 @@
 
 This verification proves that a backup from the configured seeded PostgreSQL database can be restored into a separate disposable database. It never restores over the source database.
 
+For scheduled snapshots and restoration of a chosen snapshot into a new isolated database, use the [Compose deployment runbook](../docker/DEPLOYMENT.md).
+
 ## Preconditions
 
 1. Docker Desktop is running.

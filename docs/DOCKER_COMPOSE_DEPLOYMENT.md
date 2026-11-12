@@ -6,6 +6,8 @@
 | Compose file | `docker/docker-compose.yml` |
 | Public endpoint | `http://localhost` by default |
 
+For operations, backup/recovery, upgrade, rollback and security guidance, see the [Compose deployment runbook](../docker/DEPLOYMENT.md) stored beside the Compose file.
+
 ## Services
 
 | Service | Responsibility | Health probe |
