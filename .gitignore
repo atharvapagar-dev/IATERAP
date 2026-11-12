@@ -35,3 +35,6 @@ ai-service/.env
 # Locally generated database backup/restore verification artifacts.
 backup/
 *.dump
+
+# Local clean-checkout Compose verification evidence.
+artifacts/clean-compose-verification/
