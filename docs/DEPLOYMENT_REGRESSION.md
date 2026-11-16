@@ -8,7 +8,7 @@
 
 The suite validates the containerised platform through its public Nginx endpoint. It detects broken Compose health checks, frontend routing, reverse-proxy configuration, backend authentication, and module read-route availability.
 
-The frontend container exposes a dedicated internal `GET /healthz` endpoint. Compose probes that endpoint with `curl`, so frontend health is independent of the single-page-app fallback route and the base image's optional utilities.
+The frontend container exposes a dedicated internal `GET /healthz` endpoint. Compose probes that endpoint with `curl`, so frontend health is independent of the single-page-app fallback route and the base image's optional utilities. The outer Nginx image is checked with its built-in `nginx -t` command because the official image does not guarantee an HTTP client; the regression suite then exercises its public HTTP routing.
 
 ## Coverage
 
