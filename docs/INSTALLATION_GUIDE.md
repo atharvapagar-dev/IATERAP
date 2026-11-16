@@ -5,6 +5,7 @@
 | Jira | AI-280 / T18-A3 |
 | Audience | Developers setting up a local, non-container development environment |
 | Deployment alternative | [Docker Compose deployment](DOCKER_COMPOSE_DEPLOYMENT.md) |
+| Contributor workflow | [Developer Guide](DEVELOPER_GUIDE.md) |
 
 This guide installs IATERAP directly on a developer machine. It is intentionally separate from the Docker Compose guide: use this guide when running services individually for development and debugging; use Compose when you need the five-service stack behind Nginx.
 
@@ -172,6 +173,8 @@ npm run build
 ```
 
 On Windows, use `mvnw.cmd` rather than `./mvnw`.
+
+For repository structure, coding workflow, adding a Rule Engine rule, and the full contribution checklist, continue with the [Developer Guide](DEVELOPER_GUIDE.md).
 
 ## 9. Troubleshooting
 
