@@ -7,5 +7,6 @@ Integrated Aerospace Test Engineering &amp; Reliability Analytics Platform
 - [Docker Compose Deployment](docs/DOCKER_COMPOSE_DEPLOYMENT.md)
 - [Environment Configuration](docs/ENVIRONMENT_CONFIGURATION.md)
 - [Seeded Database Backup/Restore Verification](docs/BACKUP_RESTORE_VERIFICATION.md)
+- [Clean-Checkout Docker Compose Verification](docs/CLEAN_CHECKOUT_COMPOSE_VERIFICATION.md)
 - [Database Design](docs/DATABASE_DESIGN.md)
 - [Database Design PDF](docs/DATABASE_DESIGN.pdf)
