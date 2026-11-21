@@ -1,0 +1,55 @@
+name: Deployment Regression
+
+on:
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+jobs:
+  compose-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create disposable Compose environment
+        working-directory: docker
+        run: |
+          cat > .env <<'EOF'
+          POSTGRES_DB=iaterap_regression
+          POSTGRES_USER=iaterap_regression
+          POSTGRES_PASSWORD=ci-local-only-postgres-password
+          POSTGRES_PORT=15432
+          APP_PORT=18080
+          JWT_SECRET=ci-deployment-regression-secret-at-least-32-bytes-long
+          AI_ADVISORY_BASE_URL=http://ai-service:8000
+          EOF
+
+      - name: Build and start five-service platform
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml up --build --detach --wait --wait-timeout 300
+
+      - name: Run deployed route and API regression suite
+        shell: pwsh
+        env:
+          DEPLOYMENT_REGRESSION_USERNAME: admin
+          DEPLOYMENT_REGRESSION_PASSWORD: admin123
+        run: ./scripts/test-deployment-routes.ps1 -BaseUrl http://localhost:18080
+
+      - name: Collect deployment diagnostics
+        if: always()
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml logs --no-color > deployment-compose.log
+
+      - name: Upload deployment diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-regression-diagnostics
+          path: |
+            deployment-compose.log
+            artifacts/deployment-regression/
+          if-no-files-found: warn
+
+      - name: Stop deployment stack
+        if: always()
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml down --volumes --remove-orphans

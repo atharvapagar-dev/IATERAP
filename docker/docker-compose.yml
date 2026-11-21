@@ -64,7 +64,7 @@ services:
       args:
         VITE_API_BASE_URL: /api
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost/ >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "curl --fail --silent --show-error http://localhost/healthz >/dev/null"]
       interval: 10s
       timeout: 3s
       retries: 6
@@ -83,7 +83,10 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost/ >/dev/null || exit 1"]
+      # The official nginx image does not guarantee an HTTP client. The
+      # container exits when nginx cannot start, so validate its loaded config
+      # here; the deployment regression suite verifies public HTTP routing.
+      test: ["CMD-SHELL", "nginx -t"]
       interval: 10s
       timeout: 3s
       retries: 6
