@@ -16,7 +16,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (token) {
-            navigate("/projects", { replace: true });
+            navigate("/workspace", { replace: true });
         }
     }, [navigate, token]);
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
 
             login(response.data);
 
-            const from = location.state?.from?.pathname || "/projects";
+            const from = location.state?.from?.pathname || "/workspace";
             navigate(from, { replace: true });
         } catch (error) {
             setError("Login failed. Please check your credentials.");
